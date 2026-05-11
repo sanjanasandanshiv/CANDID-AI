@@ -1,0 +1,3589 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Soft Skills Results – {{ job.title }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body { 
+            background: #f4f6f9; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            margin: 0;
+            color: #1e293b;
+        }
+        .container { max-width: 1020px; margin: 30px auto; padding: 0 20px; }
+
+        /* Page header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        .btn-back { 
+            padding: 8px 16px; 
+            background: #fff; 
+            color: #475569; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-size: .88em; 
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-back:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        /* Summary strip */
+        .summary-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+        .summary-card { 
+            flex: 1; min-width: 120px; background: #fff; border-radius: 12px; 
+            padding: 20px; text-align: center; border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .summary-card .val { font-size: 1.75rem; font-weight: 800; }
+        .summary-card .lbl { font-size: .75rem; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── THRESHOLD PANEL ── */
+        .threshold-panel {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border-radius: 16px; padding: 28px 32px; margin-bottom: 28px;
+            position: relative; overflow: hidden; color: #fff;
+            box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.2);
+        }
+        .tp-title { font-size: 1.15rem; font-weight: 700; color: #e0e7ff; margin-bottom: 6px; }
+        .tp-subtitle { color: #a5b4fc; font-size: .85rem; margin-bottom: 22px; }
+
+        .tp-controls { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 1; }
+        .tp-slider-wrap { flex: 1; min-width: 250px; }
+        .tp-slider-label { display: flex; justify-content: space-between; color: #c7d2fe; font-size: .75rem; margin-bottom: 10px; }
+        
+        input[type=range]#threshSlider {
+            width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+            background: rgba(255,255,255,0.2); -webkit-appearance: none; appearance: none;
+        }
+        input[type=range]#threshSlider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 22px; height: 22px;
+            border-radius: 50%; background: #4ade80; cursor: pointer;
+            border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .tp-score-display {
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 12px; padding: 12px; text-align: center; min-width: 80px;
+        }
+        .tp-score-display .tval { font-size: 1.8rem; font-weight: 800; color: #4ade80; line-height: 1; }
+        .tp-score-display .tunit { font-size: .7rem; color: #a5b4fc; margin-top: 2px; }
+
+        .tp-preview {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px; padding: 12px 20px; min-width: 140px; text-align: center;
+        }
+        .tp-preview .pcount { font-size: 1.5rem; font-weight: 700; color: #fbbf24; }
+        .tp-preview .plabel { font-size: .75rem; color: #a5b4fc; }
+
+        .btn-shortlist {
+            padding: 14px 28px; background: #22c55e;
+            color: #fff; border: none; border-radius: 12px; font-weight: 700;
+            font-size: .95rem; cursor: pointer; transition: all .2s;
+        }
+        .btn-shortlist:hover { background: #16a34a; transform: translateY(-2px); }
+        .btn-shortlist:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; transform: none; }
+
+        /* Candidate cards */
+        .candidate-card {
+            background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+            margin-bottom: 16px; overflow: hidden; transition: all .3s ease;
+        }
+        .candidate-card.above-thresh { border: 2px solid #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15); }
+        .candidate-card.above-thresh .card-summary { background: #f0fdf4; }
+
+        .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 20px; cursor: pointer; user-select: none; }
+        .card-summary:hover { filter: brightness(.98); }
+        
+        .candidate-name  { font-weight: 700; font-size: 1.1rem; color: #0f172a; }
+        .candidate-email { font-size: .85rem; color: #64748b; margin-top: 2px; }
+        .submitted-time  { font-size: .75rem; color: #94a3b8; margin-top: 4px; }
+
+        .score-right { text-align: right; }
+        .overall-score { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+        .marks-sub { font-size: .75rem; color: #64748b; margin-top: 4px; font-weight: 500; }
+        .expand-hint { font-size: .7rem; color: #94a3b8; margin-top: 6px; }
+        .shortlisted-badge {
+            display: inline-block; margin-top: 8px; font-size: .7rem;
+            background: #dcfce7; color: #166534; padding: 4px 12px;
+            border-radius: 20px; font-weight: 700; text-transform: uppercase;
+        }
+
+        .score-green { color: #16a34a; }
+        .score-amber { color: #d97706; }
+        .score-red   { color: #dc2626; }
+
+        /* Detail panel */
+        .card-detail { display: none; border-top: 1px solid #f1f5f9; padding-bottom: 20px; }
+        .card-detail.open { display: block; }
+
+        .score-bars { padding: 20px; }
+        .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px; }
+        .score-item label { font-size: .8rem; color: #475569; display: block; margin-bottom: 6px; font-weight: 600; }
+        .bar-track { background: #f1f5f9; border-radius: 10px; height: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+        .bar-blue { background: #3b82f6; }
+        .bar-green { background: #22c55e; }
+        .bar-purple { background: #8b5cf6; }
+        .bar-orange { background: #f59e0b; }
+        .score-num { font-size: .8rem; color: #1e293b; font-weight: 700; float: right; }
+
+        .ai-box { 
+            margin: 0 20px 24px; padding: 16px; background: #f5f3ff; 
+            border-left: 4px solid #8b5cf6; border-radius: 0 12px 12px 0; 
+            font-size: .9rem; color: #1e293b; line-height: 1.6; 
+        }
+        .ai-box strong { color: #4c1d95; }
+
+        .questions-section { padding: 0 20px; }
+        .questions-section h4 { font-size: .95rem; color: #475569; margin: 0 0 16px; font-weight: 700; }
+
+        .q-card { border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+        .q-card-header { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            padding: 14px 18px; background: #f8fafc; cursor: pointer; gap: 12px; 
+        }
+        .q-card-header:hover { background: #f1f5f9; }
+        .q-title { font-weight: 600; font-size: .9rem; color: #1e293b; flex: 1; line-height: 1.5; }
+        .q-badges { display: flex; gap: 6px; flex-shrink: 0; }
+        .q-marks-badge { font-size: .75rem; background: #e2e8f0; color: #475569; padding: 3px 10px; border-radius: 8px; font-weight: 600; }
+        .q-score-badge { font-size: .75rem; padding: 3px 10px; border-radius: 8px; font-weight: 700; }
+        .qs-g { background: #dcfce7; color: #166534; }
+        .qs-a { background: #fef3c7; color: #92400e; }
+        .qs-r { background: #fee2e2; color: #991b1b; }
+
+        .q-card-body { display: none; padding: 18px; border-top: 1px solid #f1f5f9; }
+        .q-card-body.open { display: block; }
+
+        .video-wrap { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .video-wrap video { width: 100%; display: block; max-height: 320px; }
+
+        .transcript-box { 
+            background: #f8fafc; border-left: 4px solid #3b82f6; 
+            border-radius: 0 8px 8px 0; padding: 14px; font-size: .875rem; 
+            color: #334155; line-height: 1.6; margin-bottom: 16px; 
+        }
+        .tlabel { font-size: .7rem; color: #64748b; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+
+        .metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .pill { font-size: .75rem; padding: 4px 12px; border-radius: 8px; font-weight: 600; }
+        .pill-blue   { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+        .pill-green  { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .pill-purple { background: #f5f3ff; color: #5b21b6; border: 1px solid #ede9fe; }
+        .pill-orange { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+        .pill-red    { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+        .pill-teal   { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+
+        .q-explanation { 
+            font-size: .85rem; color: #475569; line-height: 1.6; 
+            background: #fffcf0; border-left: 4px solid #f59e0b; 
+            border-radius: 0 8px 8px 0; padding: 10px 14px; margin-top: 12px; 
+        }
+
+        /* Toast notifications */
+        #toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 16px 24px; border-radius: 12px; font-size: .95rem; font-weight: 600;
+            color: #fff; opacity: 0; transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; z-index: 9999;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        #toast.show { opacity: 1; transform: translateY(0); }
+        #toast.success { background: #10b981; }
+        #toast.error   { background: #ef4444; }
+
+        .empty-state { text-align: center; padding: 80px 20px; color: #64748b; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h2>🎤 Soft Skills Results — {{ job.title }}</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div style="padding:12px 18px; background:#fff; border-radius:8px; border-left:4px solid #3b82f6; margin-bottom:20px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    {% if results %}
+        {% set total = results | length %}
+        {% set avg_overall    = (results | sum(attribute='overall_score')    / total) | round(1) %}
+        {% set avg_fluency    = (results | sum(attribute='fluency_score')    / total) | round(1) %}
+        {% set avg_grammar    = (results | sum(attribute='grammar_score')    / total) | round(1) %}
+        {% set avg_confidence = (results | sum(attribute='confidence_score') / total) | round(1) %}
+
+        <div class="summary-row">
+            <div class="summary-card"><div class="val" style="color:#3b82f6;">{{ total }}</div><div class="lbl">Total Candidates</div></div>
+            <div class="summary-card"><div class="val" style="color:#22c55e;">{{ avg_overall }}</div><div class="lbl">Avg Overall</div></div>
+            <div class="summary-card"><div class="val" style="color:#3b82f6;">{{ avg_fluency }}</div><div class="lbl">Avg Fluency</div></div>
+            <div class="summary-card"><div class="val" style="color:#8b5cf6;">{{ avg_grammar }}</div><div class="lbl">Avg Grammar</div></div>
+            <div class="summary-card"><div class="val" style="color:#14b8a6;">{{ avg_confidence }}</div><div class="lbl">Avg Confidence</div></div>
+        </div>
+
+        <div class="threshold-panel">
+            <div class="tp-title">🏆 Selection Command Center</div>
+            <div class="tp-subtitle">Candidates above the threshold will be highlighted and eligible for automated congratulations.</div>
+
+            <div class="tp-controls">
+                <div class="tp-slider-wrap">
+                    <div class="tp-slider-label"><span>Min: 0</span><span>Drag to filter</span><span>Max: 100</span></div>
+                    <input type="range" id="threshSlider" min="0" max="100" value="60" oninput="updateThreshold(this.value)">
+                </div>
+
+                <div class="tp-score-display">
+                    <div class="tval" id="threshVal">60</div>
+                    <div class="tunit">SCORE</div>
+                </div>
+
+                <div class="tp-preview">
+                    <div class="pcount" id="qualifiedCount">0</div>
+                    <div class="plabel">Matching candidates</div>
+                </div>
+
+                <button class="btn-shortlist" id="btn-shortlist" onclick="sendShortlist()">
+                    🎉 Send Congratulations
+                </button>
+            </div>
+        </div>
+
+        {% for r in results %}
+            {% set fs  = r.fluency_score    | default(0) | int %}
+            {% set gs  = r.grammar_score    | default(0) | int %}
+            {% set cs  = r.confidence_score | default(0) | int %}
+            {% set rs2 = r.relevance_score  | default(0) | int %}
+            {% set os  = r.overall_score    | default(0) | int %}
+            {% set color_class = 'score-green' if os >= 70 else ('score-amber' if os >= 50 else 'score-red') %}
+            {% set q_details = r.question_details | from_json %}
+            {% set cid = r.candidate_id | int %}
+
+            {% set ns = namespace(total_m=0, obtained_m=0.0) %}
+            {% if q_details and q_details is iterable %}
+                {% for qd in q_details %}
+                    {% set ns.total_m = ns.total_m + (qd.marks | default(10) | int) %}
+                    {% set ratio = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) / 400.0 %}
+                    {% set ns.obtained_m = ns.obtained_m + ratio * (qd.marks|default(10)|int) %}
+                {% endfor %}
+            {% endif %}
+
+            <div class="candidate-card" data-score="{{ os }}" id="card-{{ cid }}">
+                <div class="card-summary" onclick="toggleDetail('detail-{{ loop.index }}')">
+                    <div>
+                        <div class="candidate-name">{{ r.name }}</div>
+                        <div class="candidate-email">{{ r.email }}</div>
+                        <div class="submitted-time">Submitted: {{ r.submission_time }}</div>
+                    </div>
+                    <div class="score-right">
+                        <div class="overall-score {{ color_class }}">{{ os }}<span style="font-size:.4em;color:#94a3b8;">/100</span></div>
+                        <div class="marks-sub">{{ ns.obtained_m | round(1) }} / {{ ns.total_m }} marks</div>
+                        <div class="shortlisted-badge" style="display:none;">✅ Shortlisted</div>
+                        <div class="expand-hint">Click to expand details ▼</div>
+                    </div>
+                </div>
+
+                <div class="card-detail" id="detail-{{ loop.index }}">
+                    <div class="score-bars">
+                        <div class="score-grid">
+                            <div class="score-item">
+                                <label>Fluency <span class="score-num">{{ fs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-blue" style="width:{{ fs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Grammar <span class="score-num">{{ gs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-green" style="width:{{ gs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Confidence <span class="score-num">{{ cs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-purple" style="width:{{ cs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Relevance <span class="score-num">{{ rs2 }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-orange" style="width:{{ rs2 }}%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-box">
+                        <strong>🤖 Overall AI Evaluation:</strong><br>
+                        {{ r.overall_explanation | default('Evaluation summary pending.') }}
+                    </div>
+
+                    {% if q_details and q_details is iterable %}
+                        <div class="questions-section">
+                            <h4>📹 Response Recordings & Question Scores</h4>
+                            {% for qd in q_details %}
+                                {% set q_avg = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) // 4 %}
+                                {% set q_badge = 'qs-g' if q_avg >= 70 else ('qs-a' if q_avg >= 50 else 'qs-r') %}
+                                
+                                <div class="q-card">
+                                    <div class="q-card-header" onclick="toggleQ('qq-{{ loop.index }}-{{ cid }}')">
+                                        <div class="q-title">
+                                            Q{{ loop.index }}{% if qd.skill %} <span style="color:#64748b; font-weight:400;">({{ qd.skill }})</span>{% endif %}: {{ qd.question | default('—') }}
+                                        </div>
+                                        <div class="q-badges">
+                                            <span class="q-marks-badge">{{ qd.marks | default(10) }} marks</span>
+                                            <span class="q-score-badge {{ q_badge }}">{{ q_avg }}/100</span>
+                                        </div>
+                                    </div>
+                                    <div class="q-card-body" id="qq-{{ loop.index }}-{{ cid }}">
+                                        {% if qd.recording_path %}
+                                            <div class="video-wrap">
+                                                <video controls preload="metadata" src="{{ url_for('softskills.serve_softskills_video', job_id=job_id, candidate_id=cid, q_num=loop.index) }}"></video>
+                                            </div>
+                                        {% else %}
+                                            <div class="no-video">📭 No recording submitted for this question.</div>
+                                        {% endif %}
+
+                                        {% if qd.transcript %}
+                                            <div class="transcript-box">
+                                                <div class="tlabel">📝 TRANSCRIPT</div>
+                                                "{{ qd.transcript }}"
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="metrics">
+                                            <span class="pill pill-blue">Fluency: {{ qd.fluency_score|default(0) }}</span>
+                                            <span class="pill pill-green">Grammar: {{ qd.grammar_score|default(0) }}</span>
+                                            <span class="pill pill-purple">Confidence: {{ qd.confidence_score|default(0) }}</span>
+                                            <span class="pill pill-orange">Relevance: {{ qd.relevance_score|default(0) }}</span>
+                                            {% if qd.filler_words %}<span class="pill pill-orange">Filler words: {{ qd.filler_words }}</span>{% endif %}
+                                            {% if qd.pauses %}<span class="pill pill-orange">Pauses: {{ qd.pauses }}</span>{% endif %}
+                                            {% if qd.grammar_errors %}<span class="pill pill-red">Grammar errors: {{ qd.grammar_errors }}</span>{% endif %}
+                                        </div>
+
+                                        {% if qd.explanation %}
+                                            <div class="q-explanation"><strong>AI Feedback:</strong> {{ qd.explanation }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="empty-state">
+            <div style="font-size:3rem; margin-bottom:16px;">🎤</div>
+            <h3>No results to display yet</h3>
+            <p>Share the soft skills interview link with candidates to see results here.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+    // Logic for Threshold Slider & Highlighting
+    function updateThreshold(val) {
+        val = parseInt(val);
+        document.getElementById('threshVal').textContent = val;
+
+        let count = 0;
+        document.querySelectorAll('.candidate-card').forEach(card => {
+            const score = parseInt(card.dataset.score);
+            if (score >= val) {
+                card.classList.add('above-thresh');
+                count++;
+            } else {
+                card.classList.remove('above-thresh');
+            }
+        });
+
+        document.getElementById('qualifiedCount').textContent = count;
+        document.getElementById('btn-shortlist').disabled = (count === 0);
+    }
+
+    // AJAX Call for Shortlisting
+    async function sendShortlist() {
+        const threshold = parseInt(document.getElementById('threshSlider').value);
+        const btn = document.getElementById('btn-shortlist');
+        const jobId = "{{ job_id }}";
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Processing...';
+
+        try {
+            const response = await fetch(`/admin/softskills_shortlist/${jobId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ threshold: threshold })
+            });
+            const data = await response.json();
+
+            if (data.ok) {
+                showToast('success', '✅ ' + data.message);
+                // Reveal shortlisted badges for current qualified cards
+                document.querySelectorAll('.candidate-card.above-thresh .shortlisted-badge').forEach(b => {
+                    b.style.display = 'inline-block';
+                });
+            } else {
+                showToast('error', '❌ ' + (data.message || 'Action failed'));
+            }
+        } catch (error) {
+            showToast('error', '❌ Server error. Check your connection.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🎉 Send Congratulations';
+        }
+    }
+
+    // Helpers
+    function showToast(type, msg) {
+        const toast = document.getElementById('toast');
+        toast.className = 'show ' + type;
+        toast.textContent = msg;
+        setTimeout(() => { toast.className = ''; }, 4000);
+    }
+
+    function toggleDetail(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        el.classList.toggle('open');
+        if (isOpen) el.querySelectorAll('video').forEach(v => v.pause());
+    }
+
+    function toggleQ(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        el.classList.toggle('open');
+        if (isOpen) { const v = el.querySelector('video'); if (v) v.pause(); }
+    }
+
+    // Initialize default state
+    window.addEventListener('DOMContentLoaded', () => updateThreshold(60));
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft Skills Interview Results - {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: #f1f5f9;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .candidate-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .candidate-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            cursor: pointer;
+        }
+        .candidate-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        .candidate-header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+        }
+        .responses {
+            padding: 20px;
+            display: none;
+        }
+        .responses.show {
+            display: block;
+        }
+        .response-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .response-item:last-child {
+            border-bottom: none;
+        }
+        .question {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .audio-player {
+            margin: 15px 0;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        audio {
+            width: 100%;
+        }
+        .answer-text {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #475569;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #64748b;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #475569;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #475569;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+        
+        <div class="header">
+            <h1>Soft Skills Interview Results</h1>
+            <h2>{{ job.title }}</h2>
+            <p>Total Candidates: {{ candidates|length }}</p>
+        </div>
+
+        {% if candidates %}
+            {% for candidate in candidates %}
+            <div class="candidate-card">
+                <div class="candidate-header" onclick="toggleResponses({{ loop.index }})">
+                    <h3>{{ candidate.candidate_name }}</h3>
+                    <p>{{ candidate.candidate_email }} | Submitted: {{ candidate.submission_time[:19] }}</p>
+                    <p class="badge">{{ candidate.responses|length }} answers</p>
+                </div>
+                <div class="responses" id="responses-{{ loop.index }}">
+                    {% for response in candidate.responses %}
+                    <div class="response-item">
+                        <div class="question">
+                            Question {{ response.question_number }}: {{ response.question_text }}
+                        </div>
+                        <div class="audio-player">
+                            <strong>Audio Response:</strong><br>
+                            <audio controls>
+                                <source src="{{ url_for('uploaded_file', filename='softskills_audio/' + response.audio_path) }}" type="audio/webm">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        {% if response.answer_text %}
+                        <div class="answer-text">
+                            <strong>Text Response (if any):</strong><br>
+                            {{ response.answer_text }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="header">
+                <p>No soft skills interview submissions yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleResponses(index) {
+            const responsesDiv = document.getElementById(`responses-${index}`);
+            responsesDiv.classList.toggle('show');
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft Skills Results | {{ job.title if job else 'Interview' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+            margin: 0;
+            padding: 30px 20px 60px;
+        }
+        .page-wrap { max-width: 1000px; margin: 0 auto; }
+
+        /* ── Page Header ── */
+        .page-header {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 28px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-header h2 { margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+        .page-header p  { margin: 4px 0 0; color: #64748b; font-size: 0.9rem; }
+
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 20px; background: #64748b; color: #fff;
+            border-radius: 10px; text-decoration: none;
+            font-weight: 700; font-size: 0.9rem; transition: background 0.2s;
+        }
+        .back-btn:hover { background: #475569; }
+
+        /* ── Candidate Card ── */
+        .candidate-card {
+            background: #fff; border-radius: 16px; border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .candidate-header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 20px 28px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 12px;
+            cursor: pointer; user-select: none;
+        }
+        .candidate-header:hover { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .candidate-name  { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 4px; }
+        .candidate-email { font-size: 0.85rem; color: #94a3b8; }
+        .q-count-badge {
+            background: rgba(255,255,255,0.15); color: #e2e8f0;
+            border-radius: 99px; padding: 4px 12px; font-size: 0.8rem; font-weight: 700;
+        }
+        .submitted-at { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
+        .collapse-icon { font-size: 1.1rem; color: #94a3b8; transition: transform 0.3s; }
+
+        /* ── Question Row ── */
+        .q-row {
+            padding: 24px 28px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .q-row:last-child { border-bottom: none; }
+        .q-label {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 0.78rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: #2563eb; margin-bottom: 10px;
+        }
+        .q-text-main {
+            font-size: 1rem; font-weight: 600; color: #1e293b;
+            line-height: 1.5; margin-bottom: 16px;
+        }
+
+        /* ── Video Player ── */
+        .video-section {
+            background: #0f172a; border-radius: 12px;
+            padding: 16px 20px; margin-bottom: 12px;
+        }
+        .video-section label {
+            display: block; font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: #64748b; margin-bottom: 10px;
+        }
+        .video-section video {
+            width: 100%;
+            border-radius: 8px;
+            max-height: 360px;
+            background: #000;
+            display: block;
+            /* ensure video element gets correct dimensions */
+            min-height: 200px;
+        }
+
+        /* ── Transcript Section ── */
+        .transcript-section {
+            background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 10px; padding: 16px 18px; margin-bottom: 12px;
+        }
+        .transcript-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+        }
+        .transcript-header label {
+            font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
+        }
+        .btn-transcribe {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: none; border-radius: 8px;
+            background: #7c3aed; color: #fff;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-transcribe:hover:not(:disabled) { background: #6d28d9; }
+        .btn-transcribe:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-transcribe.cached { background: #16a34a; }
+
+        .transcript-body {
+            font-size: 0.95rem; line-height: 1.7; color: #1e293b;
+            white-space: pre-wrap;
+        }
+        .transcript-body.placeholder { color: #94a3b8; font-style: italic; }
+        .transcript-error { color: #dc2626; font-size: 0.85rem; margin-top: 6px; }
+
+        /* ── Text Answer ── */
+        .text-answer-section {
+            background: #f0fdf4; border: 1px solid #bbf7d0;
+            border-radius: 10px; padding: 14px 18px;
+        }
+        .text-answer-section label {
+            display: block; font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: #16a34a; margin-bottom: 8px;
+        }
+        .text-answer-section p { margin: 0; color: #1e293b; font-size: 0.95rem; line-height: 1.6; }
+        .no-text { color: #94a3b8; font-style: italic; font-size: 0.9rem; }
+
+        /* ── Alerts ── */
+        .no-recording {
+            background: #fef9c3; border: 1px solid #fde047;
+            border-radius: 10px; padding: 12px 16px;
+            color: #854d0e; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            background: #fff; border-radius: 16px; padding: 60px 40px;
+            text-align: center; border: 1px solid #e2e8f0;
+        }
+        .empty-state h3 { color: #64748b; margin-bottom: 12px; }
+        .empty-state p  { color: #94a3b8; }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+
+    <div class="page-header">
+        <div>
+            <h2>🎙️ Soft Skills Interview Results</h2>
+            <p>{{ job.title if job else 'Job' }} &mdash; {{ candidates|length }} candidate(s) submitted</p>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    {% if candidates %}
+        {% for candidate in candidates %}
+        <div class="candidate-card" id="card-{{ loop.index }}">
+
+            <div class="candidate-header" onclick="toggleCard({{ loop.index }})">
+                <div>
+                    <div class="candidate-name">{{ candidate.candidate_name }}</div>
+                    <div class="candidate-email">{{ candidate.candidate_email }}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <span class="q-count-badge">{{ candidate.responses|length }} answer(s)</span>
+                    <div class="submitted-at">{{ candidate.submission_time }}</div>
+                    <span class="collapse-icon" id="icon-{{ loop.index }}">▼</span>
+                </div>
+            </div>
+
+            <div class="candidate-body" id="body-{{ loop.index }}">
+                {% if candidate.responses %}
+                    {% for resp in candidate.responses | sort(attribute='question_number') %}
+                    <div class="q-row">
+
+                        <div class="q-label">Q{{ resp.question_number }}</div>
+
+                        {% if resp.question_text %}
+                        <div class="q-text-main">{{ resp.question_text }}</div>
+                        {% endif %}
+
+                        # ── Video Player ── 
+                        {% if resp.audio_url %}
+                        <div class="video-section">
+                            <label>🎥 Video Recording</label>
+                            <video controls preload="auto" playsinline
+                                   style="width:100%;border-radius:8px;max-height:320px;background:#000;display:block;">
+                                <source src="{{ resp.audio_url }}" type="video/webm; codecs=vp9,opus">
+                                <source src="{{ resp.audio_url }}" type="video/webm; codecs=vp8,opus">
+                                <source src="{{ resp.audio_url }}" type="video/webm">
+                                <source src="{{ resp.audio_url }}" type="video/mp4">
+                                Your browser does not support video playback.
+                            </video>
+                        </div>
+                        {% elif resp.audio_path %}
+                        <div class="no-recording">
+                            ⚠️ File <code>{{ resp.audio_path }}</code> referenced but not served.
+                            Check <code>uploads/softskills_audio/</code>.
+                        </div>
+                        {% else %}
+                        <div class="no-recording">🔇 No recording for this question.</div>
+                        {% endif %}
+
+                        # ── Transcript ── 
+                        {% if resp.audio_path %}
+                        <div class="transcript-section" id="ts-wrap-{{ resp.id }}">
+                            <div class="transcript-header">
+                                <label>📝 Transcript</label>
+                                {% if resp.transcript %}
+                                <button class="btn-transcribe cached" disabled>
+                                    ✅ Already Transcribed
+                                </button>
+                                {% else %}
+                                <button class="btn-transcribe"
+                                        id="btn-ts-{{ resp.id }}"
+                                        onclick="transcribe({{ resp.id }})">
+                                    ✨ Transcribe with AI
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="transcript-body {% if not resp.transcript %}placeholder{% endif %}"
+                                 id="ts-text-{{ resp.id }}">
+                                {% if resp.transcript %}
+                                    {{ resp.transcript }}
+                                {% else %}
+                                    Click "Transcribe with AI" to generate a transcript using Groq Whisper.
+                                {% endif %}
+                            </div>
+                            <div class="transcript-error" id="ts-err-{{ resp.id }}" style="display:none;"></div>
+                        </div>
+                        {% endif %}
+
+                        # ── Typed Answer (if any) ── 
+                        {% set ca = resp.answer_text | default('') %}
+                        {% if ca and not ca.startswith('Audio recording') and not ca.startswith('Video recording') and ca != 'No recording submitted' and ca | length > 2 %}
+                        <div class="text-answer-section" style="margin-top:12px;">
+                            <label>💬 Typed Answer</label>
+                            <p>{{ ca }}</p>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div style="padding:24px 28px; color:#94a3b8; font-style:italic;">
+                    No responses recorded for this candidate.
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <h3>No submissions yet</h3>
+            <p>No candidates have completed the soft skills interview for this job.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+    // ── Collapse / expand candidate cards ────────────────────────────────────
+    function toggleCard(idx) {
+        const body = document.getElementById('body-' + idx);
+        const icon = document.getElementById('icon-' + idx);
+        if (!body) return;
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            body.style.display = 'none';
+            icon.style.transform = 'rotate(-90deg)';
+        }
+    }
+
+    // ── Groq Whisper transcription ────────────────────────────────────────────
+    async function transcribe(responseId) {
+        const btn    = document.getElementById('btn-ts-' + responseId);
+        const txtEl  = document.getElementById('ts-text-' + responseId);
+        const errEl  = document.getElementById('ts-err-' + responseId);
+
+        if (!btn || !txtEl) return;
+
+        // Loading state
+        btn.disabled = true;
+        btn.textContent = '⏳ Transcribing…';
+        errEl.style.display = 'none';
+        txtEl.textContent = 'Sending audio to Groq Whisper — this may take a few seconds…';
+        txtEl.className = 'transcript-body placeholder';
+
+        try {
+            const resp = await fetch(`/softskills/admin/transcribe/${responseId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                txtEl.textContent = data.transcript;
+                txtEl.className = 'transcript-body';
+                btn.textContent = '✅ Transcribed';
+                btn.classList.add('cached');
+                btn.disabled = true;
+            } else {
+                txtEl.textContent = 'Transcription unavailable — click to retry.';
+                txtEl.className = 'transcript-body placeholder';
+                errEl.textContent = '❌ ' + (data.message || 'Unknown error');
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '🔁 Retry Transcription';
+            }
+        } catch (err) {
+            console.error('Transcription fetch error:', err);
+            txtEl.textContent = 'Network error — click to retry.';
+            txtEl.className = 'transcript-body placeholder';
+            errEl.textContent = '❌ Network error: ' + err.message;
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = '🔁 Retry Transcription';
+        }
+    }
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Soft Skills Results – {{ job.title }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body { 
+            background: #f4f6f9; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            margin: 0;
+            color: #1e293b;
+        }
+        .container { max-width: 1020px; margin: 30px auto; padding: 0 20px; }
+
+        /* Page header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        .btn-back { 
+            padding: 8px 16px; 
+            background: #fff; 
+            color: #475569; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-size: .88em; 
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-back:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        /* Summary strip */
+        .summary-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+        .summary-card { 
+            flex: 1; min-width: 120px; background: #fff; border-radius: 12px; 
+            padding: 20px; text-align: center; border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .summary-card .val { font-size: 1.75rem; font-weight: 800; }
+        .summary-card .lbl { font-size: .75rem; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── THRESHOLD PANEL ── */
+        .threshold-panel {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border-radius: 16px; padding: 28px 32px; margin-bottom: 28px;
+            position: relative; overflow: hidden; color: #fff;
+            box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.2);
+        }
+        .tp-title { font-size: 1.15rem; font-weight: 700; color: #e0e7ff; margin-bottom: 6px; }
+        .tp-subtitle { color: #a5b4fc; font-size: .85rem; margin-bottom: 22px; }
+
+        .tp-controls { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 1; }
+        .tp-slider-wrap { flex: 1; min-width: 250px; }
+        .tp-slider-label { display: flex; justify-content: space-between; color: #c7d2fe; font-size: .75rem; margin-bottom: 10px; }
+        
+        input[type=range]#threshSlider {
+            width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+            background: rgba(255,255,255,0.2); -webkit-appearance: none; appearance: none;
+        }
+        input[type=range]#threshSlider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 22px; height: 22px;
+            border-radius: 50%; background: #4ade80; cursor: pointer;
+            border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .tp-score-display {
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 12px; padding: 12px; text-align: center; min-width: 80px;
+        }
+        .tp-score-display .tval { font-size: 1.8rem; font-weight: 800; color: #4ade80; line-height: 1; }
+        .tp-score-display .tunit { font-size: .7rem; color: #a5b4fc; margin-top: 2px; }
+
+        .tp-preview {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px; padding: 12px 20px; min-width: 140px; text-align: center;
+        }
+        .tp-preview .pcount { font-size: 1.5rem; font-weight: 700; color: #fbbf24; }
+        .tp-preview .plabel { font-size: .75rem; color: #a5b4fc; }
+
+        .btn-shortlist {
+            padding: 14px 28px; background: #22c55e;
+            color: #fff; border: none; border-radius: 12px; font-weight: 700;
+            font-size: .95rem; cursor: pointer; transition: all .2s;
+        }
+        .btn-shortlist:hover { background: #16a34a; transform: translateY(-2px); }
+        .btn-shortlist:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; transform: none; }
+
+        /* Candidate cards */
+        .candidate-card {
+            background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+            margin-bottom: 16px; overflow: hidden; transition: all .3s ease;
+        }
+        .candidate-card.above-thresh { border: 2px solid #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15); }
+        .candidate-card.above-thresh .card-summary { background: #f0fdf4; }
+
+        .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 20px; cursor: pointer; user-select: none; }
+        .card-summary:hover { filter: brightness(.98); }
+        
+        .candidate-name  { font-weight: 700; font-size: 1.1rem; color: #0f172a; }
+        .candidate-email { font-size: .85rem; color: #64748b; margin-top: 2px; }
+        .submitted-time  { font-size: .75rem; color: #94a3b8; margin-top: 4px; }
+
+        .score-right { text-align: right; }
+        .overall-score { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+        .marks-sub { font-size: .75rem; color: #64748b; margin-top: 4px; font-weight: 500; }
+        .expand-hint { font-size: .7rem; color: #94a3b8; margin-top: 6px; }
+        .shortlisted-badge {
+            display: inline-block; margin-top: 8px; font-size: .7rem;
+            background: #dcfce7; color: #166534; padding: 4px 12px;
+            border-radius: 20px; font-weight: 700; text-transform: uppercase;
+        }
+
+        .score-green { color: #16a34a; }
+        .score-amber { color: #d97706; }
+        .score-red   { color: #dc2626; }
+
+        /* Detail panel */
+        .card-detail { display: none; border-top: 1px solid #f1f5f9; padding-bottom: 20px; }
+        .card-detail.open { display: block; }
+
+        .score-bars { padding: 20px; }
+        .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px; }
+        .score-item label { font-size: .8rem; color: #475569; display: block; margin-bottom: 6px; font-weight: 600; }
+        .bar-track { background: #f1f5f9; border-radius: 10px; height: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+        .bar-blue { background: #3b82f6; }
+        .bar-green { background: #22c55e; }
+        .bar-purple { background: #8b5cf6; }
+        .bar-orange { background: #f59e0b; }
+        .score-num { font-size: .8rem; color: #1e293b; font-weight: 700; float: right; }
+
+        .ai-box { 
+            margin: 0 20px 24px; padding: 16px; background: #f5f3ff; 
+            border-left: 4px solid #8b5cf6; border-radius: 0 12px 12px 0; 
+            font-size: .9rem; color: #1e293b; line-height: 1.6; 
+        }
+        .ai-box strong { color: #4c1d95; }
+
+        .questions-section { padding: 0 20px; }
+        .questions-section h4 { font-size: .95rem; color: #475569; margin: 0 0 16px; font-weight: 700; }
+
+        .q-card { border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+        .q-card-header { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            padding: 14px 18px; background: #f8fafc; cursor: pointer; gap: 12px; 
+        }
+        .q-card-header:hover { background: #f1f5f9; }
+        .q-title { font-weight: 600; font-size: .9rem; color: #1e293b; flex: 1; line-height: 1.5; }
+        .q-badges { display: flex; gap: 6px; flex-shrink: 0; }
+        .q-marks-badge { font-size: .75rem; background: #e2e8f0; color: #475569; padding: 3px 10px; border-radius: 8px; font-weight: 600; }
+        .q-score-badge { font-size: .75rem; padding: 3px 10px; border-radius: 8px; font-weight: 700; }
+        .qs-g { background: #dcfce7; color: #166534; }
+        .qs-a { background: #fef3c7; color: #92400e; }
+        .qs-r { background: #fee2e2; color: #991b1b; }
+
+        .q-card-body { display: none; padding: 18px; border-top: 1px solid #f1f5f9; }
+        .q-card-body.open { display: block; }
+
+        .video-wrap { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .video-wrap video { width: 100%; display: block; max-height: 320px; }
+
+        .transcript-box { 
+            background: #f8fafc; border-left: 4px solid #3b82f6; 
+            border-radius: 0 8px 8px 0; padding: 14px; font-size: .875rem; 
+            color: #334155; line-height: 1.6; margin-bottom: 16px; 
+        }
+        .tlabel { font-size: .7rem; color: #64748b; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+
+        .metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .pill { font-size: .75rem; padding: 4px 12px; border-radius: 8px; font-weight: 600; }
+        .pill-blue   { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+        .pill-green  { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .pill-purple { background: #f5f3ff; color: #5b21b6; border: 1px solid #ede9fe; }
+        .pill-orange { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+        .pill-red    { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+        .pill-teal   { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+
+        .q-explanation { 
+            font-size: .85rem; color: #475569; line-height: 1.6; 
+            background: #fffcf0; border-left: 4px solid #f59e0b; 
+            border-radius: 0 8px 8px 0; padding: 10px 14px; margin-top: 12px; 
+        }
+
+        /* Toast notifications */
+        #toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 16px 24px; border-radius: 12px; font-size: .95rem; font-weight: 600;
+            color: #fff; opacity: 0; transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; z-index: 9999;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        #toast.show { opacity: 1; transform: translateY(0); }
+        #toast.success { background: #10b981; }
+        #toast.error   { background: #ef4444; }
+
+        .empty-state { text-align: center; padding: 80px 20px; color: #64748b; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h2>🎤 Soft Skills Results — {{ job.title }}</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div style="padding:12px 18px; background:#fff; border-radius:8px; border-left:4px solid #3b82f6; margin-bottom:20px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    {% if results %}
+        {% set total = results | length %}
+        {% set avg_overall    = (results | sum(attribute='overall_score')    / total) | round(1) %}
+        {% set avg_fluency    = (results | sum(attribute='fluency_score')    / total) | round(1) %}
+        {% set avg_grammar    = (results | sum(attribute='grammar_score')    / total) | round(1) %}
+        {% set avg_confidence = (results | sum(attribute='confidence_score') / total) | round(1) %}
+
+        <div class="summary-row">
+            <div class="summary-card"><div class="val" style="color:#3b82f6;">{{ total }}</div><div class="lbl">Total Candidates</div></div>
+            <div class="summary-card"><div class="val" style="color:#22c55e;">{{ avg_overall }}</div><div class="lbl">Avg Overall</div></div>
+            <div class="summary-card"><div class="val" style="color:#3b82f6;">{{ avg_fluency }}</div><div class="lbl">Avg Fluency</div></div>
+            <div class="summary-card"><div class="val" style="color:#8b5cf6;">{{ avg_grammar }}</div><div class="lbl">Avg Grammar</div></div>
+            <div class="summary-card"><div class="val" style="color:#14b8a6;">{{ avg_confidence }}</div><div class="lbl">Avg Confidence</div></div>
+        </div>
+
+        <div class="threshold-panel">
+            <div class="tp-title">🏆 Selection Command Center</div>
+            <div class="tp-subtitle">Candidates above the threshold will be highlighted and eligible for automated congratulations.</div>
+
+            <div class="tp-controls">
+                <div class="tp-slider-wrap">
+                    <div class="tp-slider-label"><span>Min: 0</span><span>Drag to filter</span><span>Max: 100</span></div>
+                    <input type="range" id="threshSlider" min="0" max="100" value="60" oninput="updateThreshold(this.value)">
+                </div>
+
+                <div class="tp-score-display">
+                    <div class="tval" id="threshVal">60</div>
+                    <div class="tunit">SCORE</div>
+                </div>
+
+                <div class="tp-preview">
+                    <div class="pcount" id="qualifiedCount">0</div>
+                    <div class="plabel">Matching candidates</div>
+                </div>
+
+                <button class="btn-shortlist" id="btn-shortlist" onclick="sendShortlist()">
+                    🎉 Send Congratulations
+                </button>
+            </div>
+        </div>
+
+        {% for r in results %}
+            {% set fs  = r.fluency_score    | default(0) | int %}
+            {% set gs  = r.grammar_score    | default(0) | int %}
+            {% set cs  = r.confidence_score | default(0) | int %}
+            {% set rs2 = r.relevance_score  | default(0) | int %}
+            {% set os  = r.overall_score    | default(0) | int %}
+            {% set color_class = 'score-green' if os >= 70 else ('score-amber' if os >= 50 else 'score-red') %}
+            {% set q_details = r.question_details | from_json %}
+            {% set cid = r.candidate_id | int %}
+
+            {% set ns = namespace(total_m=0, obtained_m=0.0) %}
+            {% if q_details and q_details is iterable %}
+                {% for qd in q_details %}
+                    {% set ns.total_m = ns.total_m + (qd.marks | default(10) | int) %}
+                    {% set ratio = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) / 400.0 %}
+                    {% set ns.obtained_m = ns.obtained_m + ratio * (qd.marks|default(10)|int) %}
+                {% endfor %}
+            {% endif %}
+
+            <div class="candidate-card" data-score="{{ os }}" id="card-{{ cid }}">
+                <div class="card-summary" onclick="toggleDetail('detail-{{ loop.index }}')">
+                    <div>
+                        <div class="candidate-name">{{ r.name }}</div>
+                        <div class="candidate-email">{{ r.email }}</div>
+                        <div class="submitted-time">Submitted: {{ r.submission_time }}</div>
+                    </div>
+                    <div class="score-right">
+                        <div class="overall-score {{ color_class }}">{{ os }}<span style="font-size:.4em;color:#94a3b8;">/100</span></div>
+                        <div class="marks-sub">{{ ns.obtained_m | round(1) }} / {{ ns.total_m }} marks</div>
+                        <div class="shortlisted-badge" style="display:none;">✅ Shortlisted</div>
+                        <div class="expand-hint">Click to expand details ▼</div>
+                    </div>
+                </div>
+
+                <div class="card-detail" id="detail-{{ loop.index }}">
+                    <div class="score-bars">
+                        <div class="score-grid">
+                            <div class="score-item">
+                                <label>Fluency <span class="score-num">{{ fs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-blue" style="width:{{ fs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Grammar <span class="score-num">{{ gs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-green" style="width:{{ gs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Confidence <span class="score-num">{{ cs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-purple" style="width:{{ cs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Relevance <span class="score-num">{{ rs2 }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-orange" style="width:{{ rs2 }}%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-box">
+                        <strong>🤖 Overall AI Evaluation:</strong><br>
+                        {{ r.overall_explanation | default('Evaluation summary pending.') }}
+                    </div>
+
+                    {% if q_details and q_details is iterable %}
+                        <div class="questions-section">
+                            <h4>📹 Response Recordings & Question Scores</h4>
+                            {% for qd in q_details %}
+                                {% set q_avg = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) // 4 %}
+                                {% set q_badge = 'qs-g' if q_avg >= 70 else ('qs-a' if q_avg >= 50 else 'qs-r') %}
+                                
+                                <div class="q-card">
+                                    <div class="q-card-header" onclick="toggleQ('qq-{{ loop.index }}-{{ cid }}')">
+                                        <div class="q-title">
+                                            Q{{ loop.index }}{% if qd.skill %} <span style="color:#64748b; font-weight:400;">({{ qd.skill }})</span>{% endif %}: {{ qd.question | default('—') }}
+                                        </div>
+                                        <div class="q-badges">
+                                            <span class="q-marks-badge">{{ qd.marks | default(10) }} marks</span>
+                                            <span class="q-score-badge {{ q_badge }}">{{ q_avg }}/100</span>
+                                        </div>
+                                    </div>
+                                    <div class="q-card-body" id="qq-{{ loop.index }}-{{ cid }}">
+                                        {% if qd.recording_path %}
+                                            <div class="video-wrap">
+                                                <video controls preload="metadata" src="{{ url_for('softskills.serve_softskills_video', job_id=job_id, candidate_id=cid, q_num=loop.index) }}"></video>
+                                            </div>
+                                        {% else %}
+                                            <div class="no-video">📭 No recording submitted for this question.</div>
+                                        {% endif %}
+
+                                        {% if qd.transcript %}
+                                            <div class="transcript-box">
+                                                <div class="tlabel">📝 TRANSCRIPT</div>
+                                                "{{ qd.transcript }}"
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="metrics">
+                                            <span class="pill pill-blue">Fluency: {{ qd.fluency_score|default(0) }}</span>
+                                            <span class="pill pill-green">Grammar: {{ qd.grammar_score|default(0) }}</span>
+                                            <span class="pill pill-purple">Confidence: {{ qd.confidence_score|default(0) }}</span>
+                                            <span class="pill pill-orange">Relevance: {{ qd.relevance_score|default(0) }}</span>
+                                            {% if qd.filler_words %}<span class="pill pill-orange">Filler words: {{ qd.filler_words }}</span>{% endif %}
+                                            {% if qd.pauses %}<span class="pill pill-orange">Pauses: {{ qd.pauses }}</span>{% endif %}
+                                            {% if qd.grammar_errors %}<span class="pill pill-red">Grammar errors: {{ qd.grammar_errors }}</span>{% endif %}
+                                        </div>
+
+                                        {% if qd.explanation %}
+                                            <div class="q-explanation"><strong>AI Feedback:</strong> {{ qd.explanation }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="empty-state">
+            <div style="font-size:3rem; margin-bottom:16px;">🎤</div>
+            <h3>No results to display yet</h3>
+            <p>Share the soft skills interview link with candidates to see results here.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+    // Logic for Threshold Slider & Highlighting
+    function updateThreshold(val) {
+        val = parseInt(val);
+        document.getElementById('threshVal').textContent = val;
+
+        let count = 0;
+        document.querySelectorAll('.candidate-card').forEach(card => {
+            const score = parseInt(card.dataset.score);
+            if (score >= val) {
+                card.classList.add('above-thresh');
+                count++;
+            } else {
+                card.classList.remove('above-thresh');
+            }
+        });
+
+        document.getElementById('qualifiedCount').textContent = count;
+        document.getElementById('btn-shortlist').disabled = (count === 0);
+    }
+
+    // AJAX Call for Shortlisting
+    async function sendShortlist() {
+        const threshold = parseInt(document.getElementById('threshSlider').value);
+        const btn = document.getElementById('btn-shortlist');
+        const jobId = "{{ job_id }}";
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Processing...';
+
+        try {
+            const response = await fetch(`/admin/softskills_shortlist/${jobId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ threshold: threshold })
+            });
+            const data = await response.json();
+
+            if (data.ok) {
+                showToast('success', '✅ ' + data.message);
+                // Reveal shortlisted badges for current qualified cards
+                document.querySelectorAll('.candidate-card.above-thresh .shortlisted-badge').forEach(b => {
+                    b.style.display = 'inline-block';
+                });
+            } else {
+                showToast('error', '❌ ' + (data.message || 'Action failed'));
+            }
+        } catch (error) {
+            showToast('error', '❌ Server error. Check your connection.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🎉 Send Congratulations';
+        }
+    }
+
+    // Helpers
+    function showToast(type, msg) {
+        const toast = document.getElementById('toast');
+        toast.className = 'show ' + type;
+        toast.textContent = msg;
+        setTimeout(() => { toast.className = ''; }, 4000);
+    }
+
+    function toggleDetail(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        el.classList.toggle('open');
+        if (isOpen) el.querySelectorAll('video').forEach(v => v.pause());
+    }
+
+    function toggleQ(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        el.classList.toggle('open');
+        if (isOpen) { const v = el.querySelector('video'); if (v) v.pause(); }
+    }
+
+    // Initialize default state
+    window.addEventListener('DOMContentLoaded', () => updateThreshold(60));
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft Skills Interview Results - {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: #f1f5f9;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .candidate-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .candidate-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            cursor: pointer;
+        }
+        .candidate-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        .candidate-header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+        }
+        .responses {
+            padding: 20px;
+            display: none;
+        }
+        .responses.show {
+            display: block;
+        }
+        .response-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .response-item:last-child {
+            border-bottom: none;
+        }
+        .question {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .audio-player {
+            margin: 15px 0;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        audio {
+            width: 100%;
+        }
+        .answer-text {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #475569;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #64748b;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #475569;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #475569;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+        
+        <div class="header">
+            <h1>Soft Skills Interview Results</h1>
+            <h2>{{ job.title }}</h2>
+            <p>Total Candidates: {{ candidates|length }}</p>
+        </div>
+
+        {% if candidates %}
+            {% for candidate in candidates %}
+            <div class="candidate-card">
+                <div class="candidate-header" onclick="toggleResponses({{ loop.index }})">
+                    <h3>{{ candidate.candidate_name }}</h3>
+                    <p>{{ candidate.candidate_email }} | Submitted: {{ candidate.submission_time[:19] }}</p>
+                    <p class="badge">{{ candidate.responses|length }} answers</p>
+                </div>
+                <div class="responses" id="responses-{{ loop.index }}">
+                    {% for response in candidate.responses %}
+                    <div class="response-item">
+                        <div class="question">
+                            Question {{ response.question_number }}: {{ response.question_text }}
+                        </div>
+                        <div class="audio-player">
+                            <strong>Audio Response:</strong><br>
+                            <audio controls>
+                                <source src="{{ url_for('uploaded_file', filename='softskills_audio/' + response.audio_path) }}" type="audio/webm">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        {% if response.answer_text %}
+                        <div class="answer-text">
+                            <strong>Text Response (if any):</strong><br>
+                            {{ response.answer_text }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="header">
+                <p>No soft skills interview submissions yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleResponses(index) {
+            const responsesDiv = document.getElementById(`responses-${index}`);
+            responsesDiv.classList.toggle('show');
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft Skills Results | {{ job.title if job else 'Interview' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #f8fafc; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #1e293b; margin: 0; padding: 30px 20px 60px; }
+        .page-wrap { max-width: 1020px; margin: 0 auto; }
+
+        /* Header */
+        .page-header { background:#fff; border-radius:16px; padding:24px 32px; margin-bottom:24px; border:1px solid #e2e8f0; box-shadow:0 4px 6px -1px rgba(0,0,0,.05); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+        .page-header h2 { margin:0; font-size:1.3rem; font-weight:800; color:#0f172a; }
+        .page-header p  { margin:4px 0 0; color:#64748b; font-size:.9rem; }
+        .back-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; background:#64748b; color:#fff; border-radius:10px; text-decoration:none; font-weight:700; font-size:.9rem; }
+        .back-btn:hover { background:#475569; }
+
+        /* Candidate card */
+        .candidate-card { background:#fff; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:24px; box-shadow:0 4px 6px -1px rgba(0,0,0,.05); overflow:hidden; }
+
+        /* Card header — matches screenshot layout */
+        .card-header { padding:20px 24px; cursor:pointer; user-select:none; border-bottom:1px solid #f1f5f9; }
+        .card-header:hover { background:#fafafa; }
+        .card-header-top { display:flex; justify-content:space-between; align-items:flex-start; }
+        .cand-name  { font-size:1.05rem; font-weight:800; color:#0f172a; }
+        .cand-email { font-size:.82rem; color:#64748b; margin-top:2px; }
+        .cand-time  { font-size:.78rem; color:#94a3b8; margin-top:2px; }
+        .score-right { text-align:right; }
+        .overall-big { font-size:1.6rem; font-weight:800; line-height:1; }
+        .marks-line  { font-size:.75rem; color:#64748b; margin-top:3px; }
+        .expand-hint { font-size:.72rem; color:#94a3b8; margin-top:6px; cursor:pointer; }
+        .score-green { color:#16a34a; }
+        .score-amber { color:#d97706; }
+        .score-red   { color:#dc2626; }
+
+        /* Dimension bars (2-column grid) */
+        .dim-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 28px; padding:18px 24px 4px; }
+        .dim-item label { display:flex; justify-content:space-between; font-size:.82rem; color:#475569; font-weight:600; margin-bottom:6px; }
+        .bar-track { background:#f1f5f9; border-radius:10px; height:9px; overflow:hidden; }
+        .bar-fill  { height:100%; border-radius:10px; transition:width 1s ease; }
+        .bar-blue   { background:#3b82f6; }
+        .bar-green  { background:#22c55e; }
+        .bar-purple { background:#8b5cf6; }
+        .bar-orange { background:#f59e0b; }
+
+        /* AI explanation box */
+        .ai-box { margin:16px 24px; padding:14px 18px; background:#f5f3ff; border-left:4px solid #8b5cf6; border-radius:0 12px 12px 0; font-size:.88rem; color:#1e293b; line-height:1.6; }
+        .ai-box strong { color:#4c1d95; }
+
+        /* Score button */
+        .btn-score { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; background:#7c3aed; color:#fff; border:none; border-radius:9px; font-weight:700; font-size:.82rem; cursor:pointer; transition:background .2s; margin-top:10px; }
+        .btn-score:hover:not(:disabled) { background:#6d28d9; }
+        .btn-score:disabled { opacity:.55; cursor:not-allowed; }
+        .btn-score.scored  { background:#16a34a; }
+
+        /* Questions section */
+        .questions-section { padding:0 24px 20px; }
+        .questions-section h4 { font-size:.92rem; color:#475569; margin:0 0 12px; font-weight:700; }
+        .q-card { border:1px solid #e2e8f0; border-radius:12px; margin-bottom:12px; overflow:hidden; }
+        .q-card-header { display:flex; justify-content:space-between; align-items:flex-start; padding:12px 16px; background:#f8fafc; cursor:pointer; gap:10px; }
+        .q-card-header:hover { background:#f1f5f9; }
+        .q-title { font-weight:600; font-size:.88rem; color:#1e293b; flex:1; line-height:1.5; }
+        .q-badges { display:flex; gap:6px; flex-shrink:0; align-items:center; }
+        .badge-marks { font-size:.72rem; background:#e2e8f0; color:#475569; padding:3px 10px; border-radius:8px; font-weight:600; }
+        .badge-score { font-size:.72rem; padding:3px 10px; border-radius:8px; font-weight:700; }
+        .bs-g { background:#dcfce7; color:#166534; }
+        .bs-a { background:#fef3c7; color:#92400e; }
+        .bs-r { background:#fee2e2; color:#991b1b; }
+
+        .q-body { display:none; padding:16px; border-top:1px solid #f1f5f9; }
+        .q-body.open { display:block; }
+
+        /* Video */
+        .video-wrap { background:#0f172a; border-radius:10px; overflow:hidden; margin-bottom:12px; }
+        .video-wrap video { width:100%; display:block; max-height:300px; }
+
+        /* Transcript */
+        .transcript-section { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+        .transcript-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
+        .transcript-header label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; }
+        .btn-transcribe { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border:none; border-radius:7px; background:#7c3aed; color:#fff; font-size:.78rem; font-weight:700; cursor:pointer; }
+        .btn-transcribe:hover:not(:disabled) { background:#6d28d9; }
+        .btn-transcribe:disabled { opacity:.5; cursor:not-allowed; }
+        .btn-transcribe.cached { background:#16a34a; }
+        .transcript-body { font-size:.9rem; line-height:1.65; color:#1e293b; white-space:pre-wrap; }
+        .transcript-body.placeholder { color:#94a3b8; font-style:italic; }
+
+        /* Metric pills */
+        .metrics { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
+        .pill { font-size:.73rem; padding:4px 11px; border-radius:8px; font-weight:600; }
+        .pill-blue   { background:#eff6ff; color:#1e40af; border:1px solid #dbeafe; }
+        .pill-green  { background:#f0fdf4; color:#166534; border:1px solid #dcfce7; }
+        .pill-purple { background:#f5f3ff; color:#5b21b6; border:1px solid #ede9fe; }
+        .pill-orange { background:#fffbeb; color:#92400e; border:1px solid #fef3c7; }
+
+        /* Q explanation */
+        .q-explanation { font-size:.84rem; color:#475569; line-height:1.6; background:#fffcf0; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; }
+
+        /* No recording */
+        .no-recording { background:#fef9c3; border:1px solid #fde047; border-radius:10px; padding:10px 14px; color:#854d0e; font-size:.83rem; font-weight:600; margin-bottom:10px; }
+
+        /* Empty state */
+        .empty-state { background:#fff; border-radius:16px; padding:60px 40px; text-align:center; border:1px solid #e2e8f0; }
+        .empty-state h3 { color:#64748b; }
+        .empty-state p  { color:#94a3b8; }
+
+        /* Toast */
+        #toast { position:fixed; bottom:28px; right:28px; padding:14px 22px; border-radius:12px; font-size:.92rem; font-weight:600; color:#fff; opacity:0; transform:translateY(16px); transition:all .3s; pointer-events:none; z-index:9999; box-shadow:0 10px 15px -3px rgba(0,0,0,.1); }
+        #toast.show { opacity:1; transform:translateY(0); }
+        #toast.success { background:#10b981; }
+        #toast.error   { background:#ef4444; }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+
+    <div class="page-header">
+        <div>
+            <h2>🎙️ Soft Skills Interview Results</h2>
+            <p>{{ job.title if job else 'Job' }} &mdash; {{ candidates|length }} candidate(s) submitted</p>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    {% if candidates %}
+        {% for candidate in candidates %}
+        {% set cid = candidate.candidate_id %}
+        {% set os  = candidate.overall_score %}
+        {% set scored = os is not none %}
+        {% set color_cls = 'score-green' if (os or 0) >= 70 else ('score-amber' if (os or 0) >= 50 else 'score-red') %}
+
+        <div class="candidate-card" id="ccard-{{ loop.index }}">
+
+            # ── Card Header ── 
+            <div class="card-header" onclick="toggleCard({{ loop.index }})">
+                <div class="card-header-top">
+                    <div>
+                        <div class="cand-name">{{ candidate.candidate_name }}</div>
+                        <div class="cand-email">{{ candidate.candidate_email }}</div>
+                        <div class="cand-time">Submitted: {{ candidate.submission_time }}</div>
+
+                        {% if not scored %}
+                        <button class="btn-score" id="btn-score-{{ cid }}"
+                                onclick="event.stopPropagation(); scoreCandidate({{ cid }}, {{ job_id }})">
+                            ✨ Score with Groq AI
+                        </button>
+                        {% else %}
+                        <button class="btn-score scored" disabled>✅ AI Scored</button>
+                        {% endif %}
+                    </div>
+                    <div class="score-right">
+                        {% if scored %}
+                            <div class="overall-big {{ color_cls }}" id="os-{{ cid }}">{{ os }}<span style="font-size:.4em;color:#94a3b8;">/100</span></div>
+                            <div class="marks-line" id="ml-{{ cid }}">
+                                {% if candidate.marks_obtained is not none and candidate.total_marks %}
+                                    {{ candidate.marks_obtained }} / {{ candidate.total_marks }} marks
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="overall-big" style="color:#cbd5e1;" id="os-{{ cid }}">—</div>
+                            <div class="marks-line" id="ml-{{ cid }}"></div>
+                        {% endif %}
+                        <div class="expand-hint">Click to expand details ▼</div>
+                    </div>
+                </div>
+
+                # Dimension bars — only show if scored 
+                {% if scored %}
+                <div class="dim-grid" onclick="event.stopPropagation();">
+                    <div class="dim-item">
+                        <label>Fluency <span>{{ candidate.fluency_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-blue" style="width:{{ candidate.fluency_score }}%"></div></div>
+                    </div>
+                    <div class="dim-item">
+                        <label>Grammar <span>{{ candidate.grammar_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-green" style="width:{{ candidate.grammar_score }}%"></div></div>
+                    </div>
+                    <div class="dim-item">
+                        <label>Confidence <span>{{ candidate.confidence_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-purple" style="width:{{ candidate.confidence_score }}%"></div></div>
+                    </div>
+                    <div class="dim-item">
+                        <label>Relevance <span>{{ candidate.relevance_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-orange" style="width:{{ candidate.relevance_score }}%"></div></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div> #/card-header 
+
+            # ── Expandable body ── 
+            <div id="cbody-{{ loop.index }}" style="display:none;">
+
+                # AI Overall Evaluation 
+                {% if scored and candidate.overall_explanation %}
+                <div class="ai-box">
+                    <strong>🤖 Overall AI Evaluation:</strong><br>
+                    {{ candidate.overall_explanation }}
+                </div>
+                {% endif %}
+
+                # Per-question section 
+                {% if candidate.question_details and candidate.question_details | length > 0 %}
+                <div class="questions-section">
+                    <h4>📹 Response Recordings &amp; Question Scores</h4>
+
+                    {% for qd in candidate.question_details %}
+                        {% set q_avg = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) // 4 %}
+                        {% set q_badge = 'bs-g' if q_avg >= 70 else ('bs-a' if q_avg >= 50 else 'bs-r') %}
+                        {% set resp = candidate.responses[loop.index0] if loop.index0 < candidate.responses|length else none %}
+
+                        <div class="q-card">
+                            <div class="q-card-header" onclick="toggleQ('qq-{{ loop.index }}-{{ cid }}')">
+                                <div class="q-title">
+                                    Q{{ loop.index }}{% if qd.skill %} <span style="color:#64748b;font-weight:400;">({{ qd.skill }})</span>{% endif %}: {{ qd.question | default('—') }}
+                                </div>
+                                <div class="q-badges">
+                                    <span class="badge-marks">{{ qd.marks | default(10) }} marks</span>
+                                    <span class="badge-score {{ q_badge }}">{{ q_avg }}/100</span>
+                                </div>
+                            </div>
+                            <div class="q-body" id="qq-{{ loop.index }}-{{ cid }}">
+
+                                # Video 
+                                {% if resp and resp.audio_url %}
+                                <div class="video-wrap">
+                                    <video controls preload="metadata" playsinline
+                                           style="width:100%;border-radius:8px;max-height:300px;background:#000;display:block;">
+                                        <source src="{{ resp.audio_url }}" type="video/webm; codecs=vp9,opus">
+                                        <source src="{{ resp.audio_url }}" type="video/webm">
+                                        <source src="{{ resp.audio_url }}" type="video/mp4">
+                                    </video>
+                                </div>
+                                {% else %}
+                                <div class="no-recording">📭 No recording for this question.</div>
+                                {% endif %}
+
+                                # Transcript 
+                                {% set resp_id = resp.id if resp else none %}
+                                {% if resp and resp.audio_path %}
+                                <div class="transcript-section" id="ts-wrap-{{ resp_id }}">
+                                    <div class="transcript-header">
+                                        <label>📝 Transcript</label>
+                                        {% if resp.transcript %}
+                                        <button class="btn-transcribe cached" disabled>✅ Transcribed</button>
+                                        {% else %}
+                                        <button class="btn-transcribe" id="btn-ts-{{ resp_id }}"
+                                                onclick="transcribeOne({{ resp_id }})">✨ Transcribe with AI</button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="transcript-body {% if not resp.transcript %}placeholder{% endif %}"
+                                         id="ts-text-{{ resp_id }}">
+                                        {{ resp.transcript if resp.transcript else 'Click "Transcribe with AI" to generate transcript.' }}
+                                    </div>
+                                    <div id="ts-err-{{ resp_id }}" style="display:none;color:#dc2626;font-size:.82rem;margin-top:5px;"></div>
+                                </div>
+                                {% endif %}
+
+                                # Groq dimension pills 
+                                {% if scored %}
+                                <div class="metrics">
+                                    <span class="pill pill-blue">Fluency: {{ qd.fluency_score|default(0) }}</span>
+                                    <span class="pill pill-green">Grammar: {{ qd.grammar_score|default(0) }}</span>
+                                    <span class="pill pill-purple">Confidence: {{ qd.confidence_score|default(0) }}</span>
+                                    <span class="pill pill-orange">Relevance: {{ qd.relevance_score|default(0) }}</span>
+                                </div>
+                                {% if qd.explanation %}
+                                <div class="q-explanation"><strong>AI Feedback:</strong> {{ qd.explanation }}</div>
+                                {% endif %}
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% else %}
+                # Fallback: show raw recordings when not yet scored 
+                <div class="questions-section">
+                    <h4>📹 Response Recordings</h4>
+                    {% for resp in candidate.responses | sort(attribute='question_number') %}
+                    <div class="q-card">
+                        <div class="q-card-header" onclick="toggleQ('rr-{{ loop.index }}-{{ cid }}')">
+                            <div class="q-title">Q{{ resp.question_number }}{% if resp.question_text %}: {{ resp.question_text }}{% endif %}</div>
+                        </div>
+                        <div class="q-body" id="rr-{{ loop.index }}-{{ cid }}">
+                            {% if resp.audio_url %}
+                            <div class="video-wrap">
+                                <video controls preload="metadata" playsinline
+                                       style="width:100%;border-radius:8px;max-height:300px;background:#000;display:block;">
+                                    <source src="{{ resp.audio_url }}" type="video/webm; codecs=vp9,opus">
+                                    <source src="{{ resp.audio_url }}" type="video/webm">
+                                    <source src="{{ resp.audio_url }}" type="video/mp4">
+                                </video>
+                            </div>
+                            {% else %}
+                            <div class="no-recording">📭 No recording for this question.</div>
+                            {% endif %}
+
+                            {% if resp.audio_path %}
+                            <div class="transcript-section" id="ts-wrap-{{ resp.id }}">
+                                <div class="transcript-header">
+                                    <label>📝 Transcript</label>
+                                    {% if resp.transcript %}
+                                    <button class="btn-transcribe cached" disabled>✅ Transcribed</button>
+                                    {% else %}
+                                    <button class="btn-transcribe" id="btn-ts-{{ resp.id }}"
+                                            onclick="transcribeOne({{ resp.id }})">✨ Transcribe with AI</button>
+                                    {% endif %}
+                                </div>
+                                <div class="transcript-body {% if not resp.transcript %}placeholder{% endif %}"
+                                     id="ts-text-{{ resp.id }}">
+                                    {{ resp.transcript if resp.transcript else 'Click "Transcribe with AI" to generate transcript.' }}
+                                </div>
+                                <div id="ts-err-{{ resp.id }}" style="display:none;color:#dc2626;font-size:.82rem;margin-top:5px;"></div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:3rem;margin-bottom:16px;">🎤</div>
+        <h3>No submissions yet</h3>
+        <p>No candidates have completed the soft skills interview for this job.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+    // ── Card toggle ────────────────────────────────────────────────
+    function toggleCard(idx) {
+        const body = document.getElementById('cbody-' + idx);
+        if (!body) return;
+        body.style.display = (body.style.display === 'none' || !body.style.display) ? 'block' : 'none';
+    }
+
+    function toggleQ(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const open = el.classList.toggle('open');
+        if (!open) { const v = el.querySelector('video'); if (v) v.pause(); }
+    }
+
+    // ── Transcription ──────────────────────────────────────────────
+    async function transcribeOne(responseId) {
+        const btn   = document.getElementById('btn-ts-' + responseId);
+        const txtEl = document.getElementById('ts-text-' + responseId);
+        const errEl = document.getElementById('ts-err-' + responseId);
+        if (!btn || !txtEl) return;
+        btn.disabled = true;
+        btn.textContent = '⏳ Transcribing…';
+        errEl.style.display = 'none';
+        txtEl.textContent = 'Sending to Groq Whisper…';
+        txtEl.className = 'transcript-body placeholder';
+        try {
+            const r = await fetch(`/softskills/admin/transcribe/${responseId}`, { method:'POST', headers:{'Content-Type':'application/json'} });
+            const d = await r.json();
+            if (d.success) {
+                txtEl.textContent = d.transcript;
+                txtEl.className = 'transcript-body';
+                btn.textContent = '✅ Transcribed';
+                btn.classList.add('cached');
+                btn.disabled = true;
+            } else {
+                txtEl.textContent = 'Transcription unavailable — click Retry.';
+                txtEl.className = 'transcript-body placeholder';
+                errEl.textContent = '❌ ' + (d.message || 'Unknown error');
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '🔁 Retry';
+            }
+        } catch(e) {
+            errEl.textContent = '❌ Network error: ' + e.message;
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = '🔁 Retry';
+        }
+    }
+
+    // ── Groq AI Scoring ────────────────────────────────────────────
+    async function scoreCandidate(candidateId, jobId) {
+        const btn = document.getElementById('btn-score-' + candidateId);
+        if (!btn) return;
+        btn.disabled = true;
+        btn.textContent = '⏳ Scoring with Groq…';
+        showToast('success', '⏳ Scoring in progress — this may take a moment…');
+
+        try {
+            const r = await fetch(`/softskills/admin/score_candidate/${jobId}/${candidateId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const d = await r.json();
+
+            if (d.success) {
+                showToast('success', `✅ Scored! Overall: ${d.overall_score}/100`);
+                // Reload page to show full scored UI
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showToast('error', '❌ ' + (d.message || 'Scoring failed'));
+                btn.disabled = false;
+                btn.textContent = '✨ Score with Groq AI';
+            }
+        } catch(e) {
+            showToast('error', '❌ Network error: ' + e.message);
+            btn.disabled = false;
+            btn.textContent = '✨ Score with Groq AI';
+        }
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────
+    function showToast(type, msg) {
+        const t = document.getElementById('toast');
+        t.className = 'show ' + type;
+        t.textContent = msg;
+        setTimeout(() => { t.className = ''; }, 4000);
+    }
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Soft Skills Results – {{ job.title }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body { 
+            background: #f4f6f9; 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            margin: 0;
+            color: #1e293b;
+        }
+        .container { max-width: 1020px; margin: 30px auto; padding: 0 20px; }
+
+        /* Page header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        .btn-back { 
+            padding: 8px 16px; 
+            background: #fff; 
+            color: #475569; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-size: .88em; 
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-back:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        /* Summary strip */
+        .summary-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+        .summary-card { 
+            flex: 1; min-width: 120px; background: #fff; border-radius: 12px; 
+            padding: 20px; text-align: center; border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .summary-card .val { font-size: 1.75rem; font-weight: 800; }
+        .summary-card .lbl { font-size: .75rem; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── THRESHOLD PANEL ── */
+        .threshold-panel {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border-radius: 16px; padding: 28px 32px; margin-bottom: 28px;
+            position: relative; overflow: hidden; color: #fff;
+            box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.2);
+        }
+        .tp-title { font-size: 1.15rem; font-weight: 700; color: #e0e7ff; margin-bottom: 6px; }
+        .tp-subtitle { color: #a5b4fc; font-size: .85rem; margin-bottom: 22px; }
+
+        .tp-controls { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 1; }
+        .tp-slider-wrap { flex: 1; min-width: 250px; }
+        .tp-slider-label { display: flex; justify-content: space-between; color: #c7d2fe; font-size: .75rem; margin-bottom: 10px; }
+        
+        input[type=range]#threshSlider {
+            width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+            background: rgba(255,255,255,0.2); -webkit-appearance: none; appearance: none;
+        }
+        input[type=range]#threshSlider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 22px; height: 22px;
+            border-radius: 50%; background: #4ade80; cursor: pointer;
+            border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .tp-score-display {
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 12px; padding: 12px; text-align: center; min-width: 80px;
+        }
+        .tp-score-display .tval { font-size: 1.8rem; font-weight: 800; color: #4ade80; line-height: 1; }
+        .tp-score-display .tunit { font-size: .7rem; color: #a5b4fc; margin-top: 2px; }
+
+        .tp-preview {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px; padding: 12px 20px; min-width: 140px; text-align: center;
+        }
+        .tp-preview .pcount { font-size: 1.5rem; font-weight: 700; color: #fbbf24; }
+        .tp-preview .plabel { font-size: .75rem; color: #a5b4fc; }
+
+        .btn-shortlist {
+            padding: 14px 28px; background: #22c55e;
+            color: #fff; border: none; border-radius: 12px; font-weight: 700;
+            font-size: .95rem; cursor: pointer; transition: all .2s;
+        }
+        .btn-shortlist:hover { background: #16a34a; transform: translateY(-2px); }
+        .btn-shortlist:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; transform: none; }
+
+        /* Candidate cards */
+        .candidate-card {
+            background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+            margin-bottom: 16px; overflow: hidden; transition: all .3s ease;
+        }
+        .candidate-card.above-thresh { border: 2px solid #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15); }
+        .candidate-card.above-thresh .card-summary { background: #f0fdf4; }
+
+        .card-summary { display: flex; justify-content: space-between; align-items: center; padding: 20px; cursor: pointer; user-select: none; }
+        .card-summary:hover { filter: brightness(.98); }
+        
+        .candidate-name  { font-weight: 700; font-size: 1.1rem; color: #0f172a; }
+        .candidate-email { font-size: .85rem; color: #64748b; margin-top: 2px; }
+        .submitted-time  { font-size: .75rem; color: #94a3b8; margin-top: 4px; }
+
+        .score-right { text-align: right; }
+        .overall-score { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+        .marks-sub { font-size: .75rem; color: #64748b; margin-top: 4px; font-weight: 500; }
+        .expand-hint { font-size: .7rem; color: #94a3b8; margin-top: 6px; }
+        .shortlisted-badge {
+            display: inline-block; margin-top: 8px; font-size: .7rem;
+            background: #dcfce7; color: #166534; padding: 4px 12px;
+            border-radius: 20px; font-weight: 700; text-transform: uppercase;
+        }
+
+        .score-green { color: #16a34a; }
+        .score-amber { color: #d97706; }
+        .score-red   { color: #dc2626; }
+
+        /* Detail panel */
+        .card-detail { display: none; border-top: 1px solid #f1f5f9; padding-bottom: 20px; }
+        .card-detail.open { display: block; }
+
+        .score-bars { padding: 20px; }
+        .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px; }
+        .score-item label { font-size: .8rem; color: #475569; display: block; margin-bottom: 6px; font-weight: 600; }
+        .bar-track { background: #f1f5f9; border-radius: 10px; height: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+        .bar-blue { background: #3b82f6; }
+        .bar-green { background: #22c55e; }
+        .bar-purple { background: #8b5cf6; }
+        .bar-orange { background: #f59e0b; }
+        .score-num { font-size: .8rem; color: #1e293b; font-weight: 700; float: right; }
+
+        .ai-box { 
+            margin: 0 20px 24px; padding: 16px; background: #f5f3ff; 
+            border-left: 4px solid #8b5cf6; border-radius: 0 12px 12px 0; 
+            font-size: .9rem; color: #1e293b; line-height: 1.6; 
+        }
+        .ai-box strong { color: #4c1d95; }
+
+        .questions-section { padding: 0 20px; }
+        .questions-section h4 { font-size: .95rem; color: #475569; margin: 0 0 16px; font-weight: 700; }
+
+        .q-card { border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+        .q-card-header { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            padding: 14px 18px; background: #f8fafc; cursor: pointer; gap: 12px; 
+        }
+        .q-card-header:hover { background: #f1f5f9; }
+        .q-title { font-weight: 600; font-size: .9rem; color: #1e293b; flex: 1; line-height: 1.5; }
+        .q-badges { display: flex; gap: 6px; flex-shrink: 0; }
+        .q-marks-badge { font-size: .75rem; background: #e2e8f0; color: #475569; padding: 3px 10px; border-radius: 8px; font-weight: 600; }
+        .q-score-badge { font-size: .75rem; padding: 3px 10px; border-radius: 8px; font-weight: 700; }
+        .qs-g { background: #dcfce7; color: #166534; }
+        .qs-a { background: #fef3c7; color: #92400e; }
+        .qs-r { background: #fee2e2; color: #991b1b; }
+
+        .q-card-body { display: none; padding: 18px; border-top: 1px solid #f1f5f9; }
+        .q-card-body.open { display: block; }
+
+        .video-wrap { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .video-wrap video { width: 100%; display: block; max-height: 320px; }
+
+        .transcript-box { 
+            background: #f8fafc; border-left: 4px solid #3b82f6; 
+            border-radius: 0 8px 8px 0; padding: 14px; font-size: .875rem; 
+            color: #334155; line-height: 1.6; margin-bottom: 16px; 
+        }
+        .tlabel { font-size: .7rem; color: #64748b; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+
+        .metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .pill { font-size: .75rem; padding: 4px 12px; border-radius: 8px; font-weight: 600; }
+        .pill-blue   { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+        .pill-green  { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .pill-purple { background: #f5f3ff; color: #5b21b6; border: 1px solid #ede9fe; }
+        .pill-orange { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+        .pill-red    { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+        .pill-teal   { background: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+
+        .q-explanation { 
+            font-size: .85rem; color: #475569; line-height: 1.6; 
+            background: #fffcf0; border-left: 4px solid #f59e0b; 
+            border-radius: 0 8px 8px 0; padding: 10px 14px; margin-top: 12px; 
+        }
+
+        /* Toast notifications */
+        #toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 16px 24px; border-radius: 12px; font-size: .95rem; font-weight: 600;
+            color: #fff; opacity: 0; transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; z-index: 9999;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        #toast.show { opacity: 1; transform: translateY(0); }
+        #toast.success { background: #10b981; }
+        #toast.error   { background: #ef4444; }
+
+        .empty-state { text-align: center; padding: 80px 20px; color: #64748b; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h2>🎤 Soft Skills Results — {{ job.title }}</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div style="padding:12px 18px; background:#fff; border-radius:8px; border-left:4px solid #3b82f6; margin-bottom:20px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    {% if results %}
+        {% set total = results | length %}
+        {% set avg_overall    = (results | sum(attribute='overall_score')    / total) | round(1) %}
+        {% set avg_fluency    = (results | sum(attribute='fluency_score')    / total) | round(1) %}
+        {% set avg_grammar    = (results | sum(attribute='grammar_score')    / total) | round(1) %}
+        {% set avg_confidence = (results | sum(attribute='confidence_score') / total) | round(1) %}
+
+        <div class="summary-row">
+            <div class="summary-card"><div class="val" style="color:#3b82f6;">{{ total }}</div><div class="lbl">Total Candidates</div></div>
+            <div class="summary-card"><div class="val" style="color:#22c55e;">{{ avg_overall }}</div><div class="lbl">Avg Overall</div></div>
+            <div class="summary-card"><div class="val" style="color:#3b82f6;">{{ avg_fluency }}</div><div class="lbl">Avg Fluency</div></div>
+            <div class="summary-card"><div class="val" style="color:#8b5cf6;">{{ avg_grammar }}</div><div class="lbl">Avg Grammar</div></div>
+            <div class="summary-card"><div class="val" style="color:#14b8a6;">{{ avg_confidence }}</div><div class="lbl">Avg Confidence</div></div>
+        </div>
+
+        <div class="threshold-panel">
+            <div class="tp-title">🏆 Selection Command Center</div>
+            <div class="tp-subtitle">Candidates above the threshold will be highlighted and eligible for automated congratulations.</div>
+
+            <div class="tp-controls">
+                <div class="tp-slider-wrap">
+                    <div class="tp-slider-label"><span>Min: 0</span><span>Drag to filter</span><span>Max: 100</span></div>
+                    <input type="range" id="threshSlider" min="0" max="100" value="60" oninput="updateThreshold(this.value)">
+                </div>
+
+                <div class="tp-score-display">
+                    <div class="tval" id="threshVal">60</div>
+                    <div class="tunit">SCORE</div>
+                </div>
+
+                <div class="tp-preview">
+                    <div class="pcount" id="qualifiedCount">0</div>
+                    <div class="plabel">Matching candidates</div>
+                </div>
+
+                <button class="btn-shortlist" id="btn-shortlist" onclick="sendShortlist()">
+                    🎉 Send Congratulations
+                </button>
+            </div>
+        </div>
+
+        {% for r in results %}
+            {% set fs  = r.fluency_score    | default(0) | int %}
+            {% set gs  = r.grammar_score    | default(0) | int %}
+            {% set cs  = r.confidence_score | default(0) | int %}
+            {% set rs2 = r.relevance_score  | default(0) | int %}
+            {% set os  = r.overall_score    | default(0) | int %}
+            {% set color_class = 'score-green' if os >= 70 else ('score-amber' if os >= 50 else 'score-red') %}
+            {% set q_details = r.question_details | from_json %}
+            {% set cid = r.candidate_id | int %}
+
+            {% set ns = namespace(total_m=0, obtained_m=0.0) %}
+            {% if q_details and q_details is iterable %}
+                {% for qd in q_details %}
+                    {% set ns.total_m = ns.total_m + (qd.marks | default(10) | int) %}
+                    {% set ratio = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) / 400.0 %}
+                    {% set ns.obtained_m = ns.obtained_m + ratio * (qd.marks|default(10)|int) %}
+                {% endfor %}
+            {% endif %}
+
+            <div class="candidate-card" data-score="{{ os }}" id="card-{{ cid }}">
+                <div class="card-summary" onclick="toggleDetail('detail-{{ loop.index }}')">
+                    <div>
+                        <div class="candidate-name">{{ r.name }}</div>
+                        <div class="candidate-email">{{ r.email }}</div>
+                        <div class="submitted-time">Submitted: {{ r.submission_time }}</div>
+                    </div>
+                    <div class="score-right">
+                        <div class="overall-score {{ color_class }}">{{ os }}<span style="font-size:.4em;color:#94a3b8;">/100</span></div>
+                        <div class="marks-sub">{{ ns.obtained_m | round(1) }} / {{ ns.total_m }} marks</div>
+                        <div class="shortlisted-badge" style="display:none;">✅ Shortlisted</div>
+                        <div class="expand-hint">Click to expand details ▼</div>
+                    </div>
+                </div>
+
+                <div class="card-detail" id="detail-{{ loop.index }}">
+                    <div class="score-bars">
+                        <div class="score-grid">
+                            <div class="score-item">
+                                <label>Fluency <span class="score-num">{{ fs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-blue" style="width:{{ fs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Grammar <span class="score-num">{{ gs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-green" style="width:{{ gs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Confidence <span class="score-num">{{ cs }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-purple" style="width:{{ cs }}%"></div></div>
+                            </div>
+                            <div class="score-item">
+                                <label>Relevance <span class="score-num">{{ rs2 }}%</span></label>
+                                <div class="bar-track"><div class="bar-fill bar-orange" style="width:{{ rs2 }}%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-box">
+                        <strong>🤖 Overall AI Evaluation:</strong><br>
+                        {{ r.overall_explanation | default('Evaluation summary pending.') }}
+                    </div>
+
+                    {% if q_details and q_details is iterable %}
+                        <div class="questions-section">
+                            <h4>📹 Response Recordings & Question Scores</h4>
+                            {% for qd in q_details %}
+                                {% set q_avg = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) // 4 %}
+                                {% set q_badge = 'qs-g' if q_avg >= 70 else ('qs-a' if q_avg >= 50 else 'qs-r') %}
+                                
+                                <div class="q-card">
+                                    <div class="q-card-header" onclick="toggleQ('qq-{{ loop.index }}-{{ cid }}')">
+                                        <div class="q-title">
+                                            Q{{ loop.index }}{% if qd.skill %} <span style="color:#64748b; font-weight:400;">({{ qd.skill }})</span>{% endif %}: {{ qd.question | default('—') }}
+                                        </div>
+                                        <div class="q-badges">
+                                            <span class="q-marks-badge">{{ qd.marks | default(10) }} marks</span>
+                                            <span class="q-score-badge {{ q_badge }}">{{ q_avg }}/100</span>
+                                        </div>
+                                    </div>
+                                    <div class="q-card-body" id="qq-{{ loop.index }}-{{ cid }}">
+                                        {% if qd.recording_path %}
+                                            <div class="video-wrap">
+                                                <video controls preload="metadata" src="{{ url_for('softskills.serve_softskills_video', job_id=job_id, candidate_id=cid, q_num=loop.index) }}"></video>
+                                            </div>
+                                        {% else %}
+                                            <div class="no-video">📭 No recording submitted for this question.</div>
+                                        {% endif %}
+
+                                        {% if qd.transcript %}
+                                            <div class="transcript-box">
+                                                <div class="tlabel">📝 TRANSCRIPT</div>
+                                                "{{ qd.transcript }}"
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="metrics">
+                                            <span class="pill pill-blue">Fluency: {{ qd.fluency_score|default(0) }}</span>
+                                            <span class="pill pill-green">Grammar: {{ qd.grammar_score|default(0) }}</span>
+                                            <span class="pill pill-purple">Confidence: {{ qd.confidence_score|default(0) }}</span>
+                                            <span class="pill pill-orange">Relevance: {{ qd.relevance_score|default(0) }}</span>
+                                            {% if qd.filler_words %}<span class="pill pill-orange">Filler words: {{ qd.filler_words }}</span>{% endif %}
+                                            {% if qd.pauses %}<span class="pill pill-orange">Pauses: {{ qd.pauses }}</span>{% endif %}
+                                            {% if qd.grammar_errors %}<span class="pill pill-red">Grammar errors: {{ qd.grammar_errors }}</span>{% endif %}
+                                        </div>
+
+                                        {% if qd.explanation %}
+                                            <div class="q-explanation"><strong>AI Feedback:</strong> {{ qd.explanation }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="empty-state">
+            <div style="font-size:3rem; margin-bottom:16px;">🎤</div>
+            <h3>No results to display yet</h3>
+            <p>Share the soft skills interview link with candidates to see results here.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+    // Logic for Threshold Slider & Highlighting
+    function updateThreshold(val) {
+        val = parseInt(val);
+        document.getElementById('threshVal').textContent = val;
+
+        let count = 0;
+        document.querySelectorAll('.candidate-card').forEach(card => {
+            const score = parseInt(card.dataset.score);
+            if (score >= val) {
+                card.classList.add('above-thresh');
+                count++;
+            } else {
+                card.classList.remove('above-thresh');
+            }
+        });
+
+        document.getElementById('qualifiedCount').textContent = count;
+        document.getElementById('btn-shortlist').disabled = (count === 0);
+    }
+
+    // AJAX Call for Shortlisting
+    async function sendShortlist() {
+        const threshold = parseInt(document.getElementById('threshSlider').value);
+        const btn = document.getElementById('btn-shortlist');
+        const jobId = "{{ job_id }}";
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Processing...';
+
+        try {
+            const response = await fetch(`/admin/softskills_shortlist/${jobId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ threshold: threshold })
+            });
+            const data = await response.json();
+
+            if (data.ok) {
+                showToast('success', '✅ ' + data.message);
+                // Reveal shortlisted badges for current qualified cards
+                document.querySelectorAll('.candidate-card.above-thresh .shortlisted-badge').forEach(b => {
+                    b.style.display = 'inline-block';
+                });
+            } else {
+                showToast('error', '❌ ' + (data.message || 'Action failed'));
+            }
+        } catch (error) {
+            showToast('error', '❌ Server error. Check your connection.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🎉 Send Congratulations';
+        }
+    }
+
+    // Helpers
+    function showToast(type, msg) {
+        const toast = document.getElementById('toast');
+        toast.className = 'show ' + type;
+        toast.textContent = msg;
+        setTimeout(() => { toast.className = ''; }, 4000);
+    }
+
+    function toggleDetail(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        el.classList.toggle('open');
+        if (isOpen) el.querySelectorAll('video').forEach(v => v.pause());
+    }
+
+    function toggleQ(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        el.classList.toggle('open');
+        if (isOpen) { const v = el.querySelector('video'); if (v) v.pause(); }
+    }
+
+    // Initialize default state
+    window.addEventListener('DOMContentLoaded', () => updateThreshold(60));
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft Skills Interview Results - {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: #f1f5f9;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .candidate-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .candidate-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            cursor: pointer;
+        }
+        .candidate-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        .candidate-header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+        }
+        .responses {
+            padding: 20px;
+            display: none;
+        }
+        .responses.show {
+            display: block;
+        }
+        .response-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .response-item:last-child {
+            border-bottom: none;
+        }
+        .question {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .audio-player {
+            margin: 15px 0;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        audio {
+            width: 100%;
+        }
+        .answer-text {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #475569;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #64748b;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #475569;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #475569;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+        
+        <div class="header">
+            <h1>Soft Skills Interview Results</h1>
+            <h2>{{ job.title }}</h2>
+            <p>Total Candidates: {{ candidates|length }}</p>
+        </div>
+
+        {% if candidates %}
+            {% for candidate in candidates %}
+            <div class="candidate-card">
+                <div class="candidate-header" onclick="toggleResponses({{ loop.index }})">
+                    <h3>{{ candidate.candidate_name }}</h3>
+                    <p>{{ candidate.candidate_email }} | Submitted: {{ candidate.submission_time[:19] }}</p>
+                    <p class="badge">{{ candidate.responses|length }} answers</p>
+                </div>
+                <div class="responses" id="responses-{{ loop.index }}">
+                    {% for response in candidate.responses %}
+                    <div class="response-item">
+                        <div class="question">
+                            Question {{ response.question_number }}: {{ response.question_text }}
+                        </div>
+                        <div class="audio-player">
+                            <strong>Audio Response:</strong><br>
+                            <audio controls>
+                                <source src="{{ url_for('uploaded_file', filename='softskills_audio/' + response.audio_path) }}" type="audio/webm">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        {% if response.answer_text %}
+                        <div class="answer-text">
+                            <strong>Text Response (if any):</strong><br>
+                            {{ response.answer_text }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="header">
+                <p>No soft skills interview submissions yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleResponses(index) {
+            const responsesDiv = document.getElementById(`responses-${index}`);
+            responsesDiv.classList.toggle('show');
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft Skills Results | {{ job.title if job else 'Interview' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        * { box-sizing: border-box; }
+        body { background:#f8fafc; font-family:'Inter',system-ui,-apple-system,sans-serif; color:#1e293b; margin:0; padding:30px 20px 60px; }
+        .page-wrap { max-width:1020px; margin:0 auto; }
+
+        /* Page header */
+        .page-header { background:#fff; border-radius:16px; padding:24px 32px; margin-bottom:24px; border:1px solid #e2e8f0; box-shadow:0 4px 6px -1px rgba(0,0,0,.05); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+        .page-header h2 { margin:0; font-size:1.3rem; font-weight:800; color:#0f172a; }
+        .page-header p  { margin:4px 0 0; color:#64748b; font-size:.9rem; }
+        .back-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; background:#64748b; color:#fff; border-radius:10px; text-decoration:none; font-weight:700; font-size:.9rem; }
+        .back-btn:hover { background:#475569; }
+
+        /* Candidate card */
+        .candidate-card { background:#fff; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:28px; box-shadow:0 4px 6px -1px rgba(0,0,0,.05); overflow:hidden; }
+
+        /* Card summary header */
+        .card-header { padding:20px 24px; border-bottom:1px solid #f1f5f9; }
+        .card-header-row { display:flex; justify-content:space-between; align-items:flex-start; }
+        .cand-name  { font-size:1.05rem; font-weight:800; color:#0f172a; }
+        .cand-email { font-size:.82rem; color:#64748b; margin-top:2px; }
+        .cand-time  { font-size:.78rem; color:#94a3b8; margin-top:2px; }
+        .score-right { text-align:right; min-width:90px; }
+        .overall-big { font-size:1.65rem; font-weight:800; line-height:1; }
+        .marks-line  { font-size:.75rem; color:#64748b; margin-top:4px; }
+        .score-green { color:#16a34a; }
+        .score-amber { color:#d97706; }
+        .score-red   { color:#dc2626; }
+        .score-grey  { color:#94a3b8; }
+
+        /* 2-col dimension bars */
+        .dim-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 28px; padding:16px 24px 4px; }
+        .dim-item label { display:flex; justify-content:space-between; font-size:.8rem; color:#475569; font-weight:600; margin-bottom:5px; }
+        .bar-track { background:#f1f5f9; border-radius:10px; height:9px; overflow:hidden; }
+        .bar-fill  { height:100%; border-radius:10px; }
+        .bar-blue   { background:#3b82f6; }
+        .bar-green  { background:#22c55e; }
+        .bar-purple { background:#8b5cf6; }
+        .bar-orange { background:#f59e0b; }
+
+        /* AI overall evaluation */
+        .ai-box { margin:16px 24px 8px; padding:14px 18px; background:#f5f3ff; border-left:4px solid #8b5cf6; border-radius:0 12px 12px 0; font-size:.875rem; color:#1e293b; line-height:1.65; }
+        .ai-box strong { color:#4c1d95; }
+
+        /* Questions section */
+        .questions-section { padding:12px 24px 24px; }
+        .questions-section h4 { font-size:.9rem; color:#475569; margin:0 0 14px; font-weight:700; }
+
+        .q-card { border:1px solid #e2e8f0; border-radius:12px; margin-bottom:16px; overflow:hidden; }
+        .q-card-header { display:flex; justify-content:space-between; align-items:flex-start; padding:12px 16px; background:#f8fafc; gap:10px; }
+        .q-skill { font-size:.72rem; color:#7c3aed; font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+        .q-title { font-weight:600; font-size:.88rem; color:#1e293b; flex:1; line-height:1.5; }
+        .q-badges { display:flex; gap:6px; flex-shrink:0; align-items:center; flex-direction:column; }
+        .badge-marks { font-size:.72rem; background:#e2e8f0; color:#475569; padding:3px 10px; border-radius:8px; font-weight:600; }
+        .badge-score { font-size:.72rem; padding:3px 10px; border-radius:8px; font-weight:700; }
+        .bs-g { background:#dcfce7; color:#166534; }
+        .bs-a { background:#fef3c7; color:#92400e; }
+        .bs-r { background:#fee2e2; color:#991b1b; }
+
+        .q-body { padding:16px; border-top:1px solid #f1f5f9; }
+
+        /* Video */
+        .video-wrap { background:#0f172a; border-radius:10px; overflow:hidden; margin-bottom:12px; }
+        .video-wrap video { width:100%; display:block; max-height:300px; }
+
+        /* Transcript */
+        .transcript-section { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+        .transcript-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
+        .transcript-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; }
+        .btn-transcribe { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border:none; border-radius:7px; background:#7c3aed; color:#fff; font-size:.78rem; font-weight:700; cursor:pointer; transition:background .2s; }
+        .btn-transcribe:hover:not(:disabled) { background:#6d28d9; }
+        .btn-transcribe:disabled { opacity:.5; cursor:not-allowed; }
+        .btn-transcribe.cached { background:#16a34a; }
+        .transcript-body { font-size:.9rem; line-height:1.65; color:#1e293b; white-space:pre-wrap; }
+        .transcript-placeholder { color:#94a3b8; font-style:italic; font-size:.9rem; }
+
+        /* Score pills */
+        .metrics { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
+        .pill { font-size:.73rem; padding:4px 11px; border-radius:8px; font-weight:600; }
+        .pill-blue   { background:#eff6ff; color:#1e40af; border:1px solid #dbeafe; }
+        .pill-green  { background:#f0fdf4; color:#166534; border:1px solid #dcfce7; }
+        .pill-purple { background:#f5f3ff; color:#5b21b6; border:1px solid #ede9fe; }
+        .pill-orange { background:#fffbeb; color:#92400e; border:1px solid #fef3c7; }
+
+        /* AI feedback per question */
+        .q-explanation { font-size:.84rem; color:#475569; line-height:1.6; background:#fffcf0; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; }
+
+        /* No recording */
+        .no-recording { background:#fef9c3; border:1px solid #fde047; border-radius:10px; padding:10px 14px; color:#854d0e; font-size:.83rem; font-weight:600; margin-bottom:12px; }
+
+        /* Scoring banner */
+        .scoring-notice { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 18px; font-size:.85rem; color:#1e40af; font-weight:600; margin-bottom:14px; }
+
+        /* Empty */
+        .empty-state { background:#fff; border-radius:16px; padding:60px 40px; text-align:center; border:1px solid #e2e8f0; }
+        .empty-state h3 { color:#64748b; }
+        .empty-state p  { color:#94a3b8; }
+
+        /* Toast */
+        #toast { position:fixed; bottom:28px; right:28px; padding:14px 22px; border-radius:12px; font-size:.92rem; font-weight:600; color:#fff; opacity:0; transform:translateY(16px); transition:all .3s; pointer-events:none; z-index:9999; box-shadow:0 10px 15px -3px rgba(0,0,0,.1); }
+        #toast.show { opacity:1; transform:translateY(0); }
+        #toast.success { background:#10b981; }
+        #toast.error   { background:#ef4444; }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+
+    <div class="page-header">
+        <div>
+            <h2>🎙️ Soft Skills Interview Results</h2>
+            <p>{{ job.title if job else 'Job' }} &mdash; {{ candidates|length }} candidate(s)</p>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    {% if candidates %}
+        {% for candidate in candidates %}
+        {% set cid = candidate.candidate_id %}
+        {% set os  = candidate.overall_score | default(0) | int %}
+        {% set scored = candidate.overall_score is not none %}
+        {% set color_cls = 'score-green' if os >= 70 else ('score-amber' if os >= 50 else ('score-red' if scored else 'score-grey')) %}
+
+        <div class="candidate-card">
+
+            <!-- ── Summary header ── -->
+            <div class="card-header">
+                <div class="card-header-row">
+                    <div>
+                        <div class="cand-name">{{ candidate.candidate_name }}</div>
+                        <div class="cand-email">{{ candidate.candidate_email }}</div>
+                        <div class="cand-time">Submitted: {{ candidate.submission_time }}</div>
+                    </div>
+                    <div class="score-right">
+                        <div class="overall-big {{ color_cls }}">
+                            {% if scored %}{{ os }}<span style="font-size:.4em;color:#94a3b8;">/100</span>
+                            {% else %}<span style="font-size:.9rem;color:#94a3b8;">Scoring…</span>{% endif %}
+                        </div>
+                        {% if scored and candidate.marks_obtained is not none and candidate.total_marks %}
+                        <div class="marks-line">{{ candidate.marks_obtained }} / {{ candidate.total_marks }} marks</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Dimension bars -->
+                {% if scored %}
+                <div class="dim-grid">
+                    <div class="dim-item">
+                        <label>Fluency <span>{{ candidate.fluency_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-blue" style="width:{{ candidate.fluency_score }}%"></div></div>
+                    </div>
+                    <div class="dim-item">
+                        <label>Grammar <span>{{ candidate.grammar_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-green" style="width:{{ candidate.grammar_score }}%"></div></div>
+                    </div>
+                    <div class="dim-item">
+                        <label>Confidence <span>{{ candidate.confidence_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-purple" style="width:{{ candidate.confidence_score }}%"></div></div>
+                    </div>
+                    <div class="dim-item">
+                        <label>Relevance <span>{{ candidate.relevance_score }}%</span></label>
+                        <div class="bar-track"><div class="bar-fill bar-orange" style="width:{{ candidate.relevance_score }}%"></div></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ── AI Overall Evaluation ── -->
+            {% if scored and candidate.overall_explanation %}
+            <div class="ai-box">
+                <strong>🤖 Overall AI Evaluation:</strong><br>
+                {{ candidate.overall_explanation }}
+            </div>
+            {% endif %}
+
+            <!-- ── Per-question recordings + scores ── -->
+            <div class="questions-section">
+                <h4>📹 Response Recordings &amp; Question Scores</h4>
+
+                {% if scored and candidate.question_details and candidate.question_details | length > 0 %}
+
+                    {# Build a lookup: question_number -> response row #}
+                    {% set resp_map = {} %}
+                    {% for resp in candidate.responses %}
+                        {% if resp_map.update({resp.question_number: resp}) %}{% endif %}
+                    {% endfor %}
+
+                    {% for qd in candidate.question_details %}
+                        {% set q_avg = ((qd.fluency_score|default(0)|int) + (qd.grammar_score|default(0)|int) + (qd.confidence_score|default(0)|int) + (qd.relevance_score|default(0)|int)) // 4 %}
+                        {% set q_badge = 'bs-g' if q_avg >= 70 else ('bs-a' if q_avg >= 50 else 'bs-r') %}
+                        {% set resp = resp_map.get(loop.index) or (candidate.responses[loop.index0] if loop.index0 < candidate.responses|length else none) %}
+
+                        <div class="q-card">
+                            <div class="q-card-header">
+                                <div style="flex:1;">
+                                    {% if qd.skill %}<div class="q-skill">{{ qd.skill }}</div>{% endif %}
+                                    <div class="q-title">Q{{ loop.index }}: {{ qd.question | default('—') }}</div>
+                                </div>
+                                <div class="q-badges">
+                                    <span class="badge-marks">{{ qd.marks | default(10) }} marks</span>
+                                    <span class="badge-score {{ q_badge }}">{{ q_avg }}/100</span>
+                                </div>
+                            </div>
+
+                            <div class="q-body">
+
+                                <!-- Video/audio recording -->
+                                {% if resp and resp.audio_url %}
+                                <div class="video-wrap">
+                                    <video controls preload="metadata" playsinline
+                                           style="width:100%;border-radius:8px;max-height:300px;background:#000;display:block;">
+                                        <source src="{{ resp.audio_url }}" type="video/webm; codecs=vp9,opus">
+                                        <source src="{{ resp.audio_url }}" type="video/webm">
+                                        <source src="{{ resp.audio_url }}" type="video/mp4">
+                                    </video>
+                                </div>
+                                {% else %}
+                                <div class="no-recording">📭 No recording for this question.</div>
+                                {% endif %}
+
+                                <!-- Transcript -->
+                                {% set resp_id = resp.id if resp else none %}
+                                {% if resp and resp.audio_path %}
+                                <div class="transcript-section">
+                                    <div class="transcript-header">
+                                        <span class="transcript-label">📝 Transcript</span>
+                                        {% if resp.transcript or qd.transcript %}
+                                        <button class="btn-transcribe cached" disabled>✅ Transcribed</button>
+                                        {% else %}
+                                        <button class="btn-transcribe" id="btn-ts-{{ resp_id }}"
+                                                onclick="transcribeOne({{ resp_id }})">✨ Transcribe with AI</button>
+                                        {% endif %}
+                                    </div>
+                                    {% set tx = resp.transcript or qd.transcript %}
+                                    {% if tx %}
+                                    <div class="transcript-body" id="ts-text-{{ resp_id }}">{{ tx }}</div>
+                                    {% else %}
+                                    <div class="transcript-placeholder" id="ts-text-{{ resp_id }}">Click "Transcribe with AI" to generate a transcript.</div>
+                                    {% endif %}
+                                    <div id="ts-err-{{ resp_id }}" style="display:none;color:#dc2626;font-size:.82rem;margin-top:5px;"></div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Score pills -->
+                                <div class="metrics">
+                                    <span class="pill pill-blue">Fluency: {{ qd.fluency_score|default(0) }}</span>
+                                    <span class="pill pill-green">Grammar: {{ qd.grammar_score|default(0) }}</span>
+                                    <span class="pill pill-purple">Confidence: {{ qd.confidence_score|default(0) }}</span>
+                                    <span class="pill pill-orange">Relevance: {{ qd.relevance_score|default(0) }}</span>
+                                </div>
+
+                                <!-- AI per-question feedback -->
+                                {% if qd.explanation %}
+                                <div class="q-explanation"><strong>AI Feedback:</strong> {{ qd.explanation }}</div>
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                {% else %}
+                    <!-- Not yet scored — show raw recordings only -->
+                    <div class="scoring-notice">⏳ Scores are being computed with Groq AI. Refresh the page in a moment.</div>
+                    {% for resp in candidate.responses | sort(attribute='question_number') %}
+                    <div class="q-card">
+                        <div class="q-card-header">
+                            <div class="q-title">Q{{ resp.question_number }}{% if resp.question_text %}: {{ resp.question_text }}{% endif %}</div>
+                        </div>
+                        <div class="q-body">
+                            {% if resp.audio_url %}
+                            <div class="video-wrap">
+                                <video controls preload="metadata" playsinline
+                                       style="width:100%;border-radius:8px;max-height:300px;background:#000;display:block;">
+                                    <source src="{{ resp.audio_url }}" type="video/webm; codecs=vp9,opus">
+                                    <source src="{{ resp.audio_url }}" type="video/webm">
+                                    <source src="{{ resp.audio_url }}" type="video/mp4">
+                                </video>
+                            </div>
+                            {% else %}
+                            <div class="no-recording">📭 No recording for this question.</div>
+                            {% endif %}
+                            {% if resp.audio_path %}
+                            <div class="transcript-section">
+                                <div class="transcript-header">
+                                    <span class="transcript-label">📝 Transcript</span>
+                                    {% if resp.transcript %}
+                                    <button class="btn-transcribe cached" disabled>✅ Transcribed</button>
+                                    {% else %}
+                                    <button class="btn-transcribe" id="btn-ts-{{ resp.id }}"
+                                            onclick="transcribeOne({{ resp.id }})">✨ Transcribe with AI</button>
+                                    {% endif %}
+                                </div>
+                                {% if resp.transcript %}
+                                <div class="transcript-body" id="ts-text-{{ resp.id }}">{{ resp.transcript }}</div>
+                                {% else %}
+                                <div class="transcript-placeholder" id="ts-text-{{ resp.id }}">Click "Transcribe with AI" to generate a transcript.</div>
+                                {% endif %}
+                                <div id="ts-err-{{ resp.id }}" style="display:none;color:#dc2626;font-size:.82rem;margin-top:5px;"></div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+            </div><!-- /questions-section -->
+        </div><!-- /candidate-card -->
+        {% endfor %}
+
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:3rem;margin-bottom:16px;">🎤</div>
+        <h3>No submissions yet</h3>
+        <p>No candidates have completed the soft skills interview for this job.</p>
+    </div>
+    {% endif %}
+
+</div><!-- /page-wrap -->
+
+<div id="toast"></div>
+
+<script>
+    // ── Transcription ──────────────────────────────────────────────
+    async function transcribeOne(responseId) {
+        const btn   = document.getElementById('btn-ts-' + responseId);
+        const txtEl = document.getElementById('ts-text-' + responseId);
+        const errEl = document.getElementById('ts-err-' + responseId);
+        if (!btn || !txtEl) return;
+        btn.disabled = true;
+        btn.textContent = '⏳ Transcribing…';
+        errEl.style.display = 'none';
+        txtEl.className = 'transcript-placeholder';
+        txtEl.textContent = 'Sending to Groq Whisper…';
+        try {
+            const r = await fetch(`/softskills/admin/transcribe/${responseId}`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'}
+            });
+            const d = await r.json();
+            if (d.success) {
+                txtEl.textContent = d.transcript;
+                txtEl.className = 'transcript-body';
+                btn.textContent = '✅ Transcribed';
+                btn.classList.add('cached');
+                btn.disabled = true;
+            } else {
+                txtEl.textContent = 'Transcription unavailable — click Retry.';
+                errEl.textContent = '❌ ' + (d.message || 'Unknown error');
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '🔁 Retry';
+            }
+        } catch(e) {
+            errEl.textContent = '❌ Network error: ' + e.message;
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = '🔁 Retry';
+        }
+    }
+
+    function showToast(type, msg) {
+        const t = document.getElementById('toast');
+        t.className = 'show ' + type;
+        t.textContent = msg;
+        setTimeout(() => { t.className = ''; }, 4000);
+    }
+</script>
+</body>
+</html>

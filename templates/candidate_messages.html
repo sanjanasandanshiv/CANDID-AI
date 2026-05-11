@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages | Candid HR</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- Theme Variables --- */
+        :root {
+            --royal-blue: #002366;
+            --indigo-dark: #1e1b4b;
+            --sidebar-width: 260px;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body { 
+            background: var(--bg-light); 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            margin: 0;
+            display: flex;
+            color: #1e293b;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--indigo-dark);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: white; }
+        .nav-link.active { background: var(--royal-blue); }
+
+        /* --- Main Content --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+        }
+
+        .top-navbar {
+            height: 75px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid #e2e8f0;
+            z-index: 999;
+        }
+
+        .user-actions { display: flex; align-items: center; gap: 15px; }
+        .user-profile-tag {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f1f5f9;
+            padding: 8px 18px;
+            border-radius: 99px;
+            font-weight: 600;
+            color: var(--indigo-dark);
+            border: 1px solid #e2e8f0;
+        }
+
+        .nav-logout-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: #fee2e2;
+            color: #b91c1c;
+            text-decoration: none;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: var(--transition);
+        }
+
+        /* --- Messages List --- */
+        .content-body { padding: 40px; max-width: 1000px; margin: 0 auto; }
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 1.8rem; color: var(--indigo-dark); font-weight: 800; margin: 0; }
+
+        .message-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            transition: var(--transition);
+            position: relative;
+            display: flex;
+            gap: 20px;
+        }
+
+        .message-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border-color: var(--royal-blue);
+        }
+
+        .msg-icon {
+            width: 50px;
+            height: 50px;
+            background: #e0e7ff;
+            color: var(--royal-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .msg-content { flex-grow: 1; }
+
+        .msg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .msg-subject { font-weight: 800; font-size: 1.1rem; color: #1e293b; margin-bottom: 4px; display: block; }
+        .msg-job-tag {
+            font-size: 0.75rem;
+            color: var(--royal-blue);
+            background: #eff6ff;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .msg-time { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+
+        .msg-body {
+            color: #475569;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        /* --- Empty State --- */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--white);
+            border-radius: 20px;
+            border: 2px dashed #e2e8f0;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; padding: 20px 10px; }
+            .sidebar span, .sidebar-logo span { display: none; }
+            .main-content { margin-left: 70px; width: calc(100% - 70px); }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <a href="#" class="sidebar-logo">
+            <span>✨</span>
+            <span>Candid AI</span>
+        </a>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="{{ url_for('candidate_jobs') }}" class="nav-link">
+                    <i class="fas fa-briefcase"></i> <span>Opportunities</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('candidate_profile') }}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> <span>My Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('candidate_messages') }}" class="nav-link active">
+                    <i class="fas fa-envelope"></i> <span>Messages</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-navbar">
+            <div class="user-actions">
+                <div class="user-profile-tag">
+                    <i class="fas fa-user"></i>
+                    <span>{{ session['user_name'] if session['user_name'] else 'Candidate' }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="nav-logout-inline">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="page-header">
+                <h1>Communications</h1>
+            </div>
+
+            <div class="message-list">
+                {% if messages %}
+                    {% for msg in messages %}
+                        <div class="message-card">
+                            <div class="msg-icon">
+                                <i class="fas fa-comment-dots"></i>
+                            </div>
+                            <div class="msg-content">
+                                <div class="msg-header">
+                                    <div>
+                                        <span class="msg-subject">{{ msg.subject }}</span>
+                                        <span class="msg-job-tag">Ref: {{ msg.job_title or 'General' }}</span>
+                                    </div>
+                                    <span class="msg-time">{{ msg.created_at.split('.') }}</span>
+                                </div>
+                                <p class="msg-body">{{ msg.body }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <h3>Your inbox is empty</h3>
+                        <p>Recruiter messages and status updates will appear here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

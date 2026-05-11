@@ -1,0 +1,1217 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Results | {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* --- Table & Container Styles --- */
+.table-container {
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    text-align: left;
+    padding: 16px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f8fafc;
+    vertical-align: middle;
+}
+
+/* --- Ranking Badges --- */
+.badge-rank { font-size: 1.5rem; }
+.rank-num { font-weight: 800; color: #cbd5e1; font-size: 1.1rem; }
+
+/* --- Candidate Name Cell --- */
+.name-cell { display: flex; flex-direction: column; }
+.c-name { font-weight: 700; color: var(--text-dark); font-size: 0.95rem; }
+.c-email { font-size: 0.8rem; color: var(--text-muted); }
+
+/* --- Score Visualization --- */
+.score-viz { display: flex; align-items: center; gap: 12px; }
+.progress-container { flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.score-text { font-weight: 800; font-size: 0.9rem; min-width: 40px; }
+
+.bg-pass { background: #10b981; }
+.bg-mid  { background: #f59e0b; }
+.bg-fail { background: #ef4444; }
+
+/* --- Search & Filters --- */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.search-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.btn-export {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover { background: #edf2f7; }
+
+/* --- Pills --- */
+.pill { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.pill-completed { background: #dcfce7; color: #166534; }
+.pill-pending { background: #fff7ed; color: #9a3412; }
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li class="active"><a href="#"><i class="fas fa-poll"></i> Test Results</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <i class="fas fa-file-signature"></i> MCQ Results: <strong>{{ job.title }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back</a>
+                <button class="btn-export" onclick="window.print()"><i class="fas fa-download"></i> Export PDF</button>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% if results %}
+            
+            {% set total = results | length %}
+            {% set passing = results | selectattr('score', 'ge', 50) | list | length %}
+            {% set avg = (results | sum(attribute='score') / total) | round(1) %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ total }}</span>
+                        <span class="lbl">Total Submissions</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ passing }}</span>
+                        <span class="lbl">Passed (≥50)</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="stat-icon amber"><i class="fas fa-chart-pie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ avg }}%</span>
+                        <span class="lbl">Average Score</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="table-controls animate-slide-up">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="candidateSearch" placeholder="Search by name or email..." onkeyup="filterTable()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Sort by:</span>
+                    <select id="scoreFilter" onchange="sortTable()">
+                        <option value="desc">Highest Score</option>
+                        <option value="asc">Lowest Score</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container animate-slide-up">
+                <table class="modern-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th width="80px">Rank</th>
+                            <th>Candidate Details</th>
+                            <th>Score Performance</th>
+                            <th>Status</th>
+                            <th>Submission Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td class="text-center">
+                                {% if loop.index == 1 %}<span class="badge-rank gold">🥇</span>
+                                {% elif loop.index == 2 %}<span class="badge-rank silver">🥈</span>
+                                {% elif loop.index == 3 %}<span class="badge-rank bronze">🥉</span>
+                                {% else %}<span class="rank-num">{{ loop.index }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <div class="name-cell">
+                                    <span class="c-name">{{ r.name }}</span>
+                                    <span class="c-email">{{ r.email }}</span>
+                                </div>
+                            </td>
+                            <td data-score="{{ r.score }}">
+                                <div class="score-viz">
+                                    <div class="progress-container">
+                                        <div class="progress-bar {% if r.score >= 70 %}bg-pass{% elif r.score >= 50 %}bg-mid{% else %}bg-fail{% endif %}" 
+                                             style="width: {{ r.score }}%"></div>
+                                    </div>
+                                    <span class="score-text">{{ r.score }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pill {% if r.status == 'Test Completed' %}pill-completed{% else %}pill-pending{% endif %}">
+                                    {{ r.status or 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="date-cell">{{ r.submission_time.split('.') if r.submission_time else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state-new">
+                <i class="fas fa-inbox fa-3x"></i>
+                <h3>No Submissions Found</h3>
+                <p>Results will appear here once candidates complete the MCQ test.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("candidateSearch").value.toLowerCase();
+            let rows = document.querySelectorAll("#resultsTable tbody tr");
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? "" : "none";
+            });
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Results | {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* --- Table & Container Styles --- */
+.table-container {
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    text-align: left;
+    padding: 16px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f8fafc;
+    vertical-align: middle;
+}
+
+/* --- Ranking Badges --- */
+.badge-rank { font-size: 1.5rem; }
+.rank-num { font-weight: 800; color: #cbd5e1; font-size: 1.1rem; }
+
+/* --- Candidate Name Cell --- */
+.name-cell { display: flex; flex-direction: column; }
+.c-name { font-weight: 700; color: var(--text-dark); font-size: 0.95rem; }
+.c-email { font-size: 0.8rem; color: var(--text-muted); }
+
+/* --- Score Visualization --- */
+.score-viz { display: flex; align-items: center; gap: 12px; }
+.progress-container { flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.score-text { font-weight: 800; font-size: 0.9rem; min-width: 40px; }
+
+.bg-pass { background: #10b981; }
+.bg-mid  { background: #f59e0b; }
+.bg-fail { background: #ef4444; }
+
+/* --- Search & Filters --- */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.search-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.btn-export {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover { background: #edf2f7; }
+
+/* --- Pills --- */
+.pill { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.pill-completed { background: #dcfce7; color: #166534; }
+.pill-pending { background: #fff7ed; color: #9a3412; }
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li class="active"><a href="#"><i class="fas fa-poll"></i> Test Results</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <i class="fas fa-file-signature"></i> MCQ Results: <strong>{{ job.title }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back</a>
+                <button class="btn-export" onclick="window.print()"><i class="fas fa-download"></i> Export PDF</button>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% if results %}
+            
+            {% set total = results | length %}
+            {% set passing = results | selectattr('score', 'ge', 50) | list | length %}
+            {% set avg = (results | sum(attribute='score') / total) | round(1) %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ total }}</span>
+                        <span class="lbl">Total Submissions</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ passing }}</span>
+                        <span class="lbl">Passed (≥50)</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="stat-icon amber"><i class="fas fa-chart-pie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ avg }}%</span>
+                        <span class="lbl">Average Score</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="table-controls animate-slide-up">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="candidateSearch" placeholder="Search by name or email..." onkeyup="filterTable()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Sort by:</span>
+                    <select id="scoreFilter" onchange="sortTable()">
+                        <option value="desc">Highest Score</option>
+                        <option value="asc">Lowest Score</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container animate-slide-up">
+                <table class="modern-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th width="80px">Rank</th>
+                            <th>Candidate Details</th>
+                            <th>Score Performance</th>
+                            <th>Status</th>
+                            <th>Submission Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td class="text-center">
+                                {% if loop.index == 1 %}<span class="badge-rank gold">🥇</span>
+                                {% elif loop.index == 2 %}<span class="badge-rank silver">🥈</span>
+                                {% elif loop.index == 3 %}<span class="badge-rank bronze">🥉</span>
+                                {% else %}<span class="rank-num">{{ loop.index }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <div class="name-cell">
+                                    <span class="c-name">{{ r.name }}</span>
+                                    <span class="c-email">{{ r.email }}</span>
+                                </div>
+                            </td>
+                            <td data-score="{{ r.score }}">
+                                <div class="score-viz">
+                                    <div class="progress-container">
+                                        <div class="progress-bar {% if r.score >= 70 %}bg-pass{% elif r.score >= 50 %}bg-mid{% else %}bg-fail{% endif %}" 
+                                             style="width: {{ r.score }}%"></div>
+                                    </div>
+                                    <span class="score-text">{{ r.score }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pill {% if r.status == 'Test Completed' %}pill-completed{% else %}pill-pending{% endif %}">
+                                    {{ r.status or 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="date-cell">{{ r.submission_time.split('.')[0] if r.submission_time else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state-new">
+                <i class="fas fa-inbox fa-3x"></i>
+                <h3>No Submissions Found</h3>
+                <p>Results will appear here once candidates complete the MCQ test.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("candidateSearch").value.toLowerCase();
+            let rows = document.querySelectorAll("#resultsTable tbody tr");
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? "" : "none";
+            });
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Results | {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* --- Table & Container Styles --- */
+.table-container {
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    text-align: left;
+    padding: 16px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f8fafc;
+    vertical-align: middle;
+}
+
+/* --- Ranking Badges --- */
+.badge-rank { font-size: 1.5rem; }
+.rank-num { font-weight: 800; color: #cbd5e1; font-size: 1.1rem; }
+
+/* --- Candidate Name Cell --- */
+.name-cell { display: flex; flex-direction: column; }
+.c-name { font-weight: 700; color: var(--text-dark); font-size: 0.95rem; }
+.c-email { font-size: 0.8rem; color: var(--text-muted); }
+
+/* --- Score Visualization --- */
+.score-viz { display: flex; align-items: center; gap: 12px; }
+.progress-container { flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.score-text { font-weight: 800; font-size: 0.9rem; min-width: 40px; }
+
+.bg-pass { background: #10b981; }
+.bg-mid  { background: #f59e0b; }
+.bg-fail { background: #ef4444; }
+
+/* --- Search & Filters --- */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.search-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.btn-export {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover { background: #edf2f7; }
+
+/* --- Pills --- */
+.pill { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.pill-completed { background: #dcfce7; color: #166534; }
+.pill-pending { background: #fff7ed; color: #9a3412; }
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li class="active"><a href="#"><i class="fas fa-poll"></i> Test Results</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <i class="fas fa-file-signature"></i> MCQ Results: <strong>{{ job.title }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back</a>
+                <button class="btn-export" onclick="window.print()"><i class="fas fa-download"></i> Export PDF</button>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% if results %}
+            
+            {% set total = results | length %}
+            {% set passing = results | selectattr('score', 'ge', 50) | list | length %}
+            {% set avg = (results | sum(attribute='score') / total) | round(1) %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ total }}</span>
+                        <span class="lbl">Total Submissions</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ passing }}</span>
+                        <span class="lbl">Passed (≥50)</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="stat-icon amber"><i class="fas fa-chart-pie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ avg }}%</span>
+                        <span class="lbl">Average Score</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="table-controls animate-slide-up">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="candidateSearch" placeholder="Search by name or email..." onkeyup="filterTable()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Sort by:</span>
+                    <select id="scoreFilter" onchange="sortTable()">
+                        <option value="desc">Highest Score</option>
+                        <option value="asc">Lowest Score</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container animate-slide-up">
+                <table class="modern-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th width="80px">Rank</th>
+                            <th>Candidate Details</th>
+                            <th>Score Performance</th>
+                            <th>Status</th>
+                            <th>Submission Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td class="text-center">
+                                {% if loop.index == 1 %}<span class="badge-rank gold">🥇</span>
+                                {% elif loop.index == 2 %}<span class="badge-rank silver">🥈</span>
+                                {% elif loop.index == 3 %}<span class="badge-rank bronze">🥉</span>
+                                {% else %}<span class="rank-num">{{ loop.index }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <div class="name-cell">
+                                    <span class="c-name">{{ r.name }}</span>
+                                    <span class="c-email">{{ r.email }}</span>
+                                </div>
+                            </td>
+                            <td data-score="{{ r.score }}">
+                                <div class="score-viz">
+                                    <div class="progress-container">
+                                        <div class="progress-bar {% if r.score >= 70 %}bg-pass{% elif r.score >= 50 %}bg-mid{% else %}bg-fail{% endif %}" 
+                                             style="width: {{ r.score }}%"></div>
+                                    </div>
+                                    <span class="score-text">{{ r.score }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pill {% if r.status == 'Test Completed' %}pill-completed{% else %}pill-pending{% endif %}">
+                                    {{ r.status or 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="date-cell">{{ r.submission_time.split('.') if r.submission_time else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state-new">
+                <i class="fas fa-inbox fa-3x"></i>
+                <h3>No Submissions Found</h3>
+                <p>Results will appear here once candidates complete the MCQ test.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("candidateSearch").value.toLowerCase();
+            let rows = document.querySelectorAll("#resultsTable tbody tr");
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? "" : "none";
+            });
+        }
+
+        function sortTable() {
+            let direction = document.getElementById("scoreFilter").value; // "asc" or "desc"
+            let tbody = document.querySelector("#resultsTable tbody");
+            let rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort(function(a, b) {
+                // Score is stored in data-score attribute on the 3rd td
+                let scoreA = parseFloat(a.querySelector("td[data-score]").getAttribute("data-score")) || 0;
+                let scoreB = parseFloat(b.querySelector("td[data-score]").getAttribute("data-score")) || 0;
+                return direction === "desc" ? scoreB - scoreA : scoreA - scoreB;
+            });
+
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Update rank badges after sort
+            rows.forEach(function(row, i) {
+                let rankCell = row.querySelector("td:first-child");
+                let rank = i + 1;
+                if (rank === 1)      rankCell.innerHTML = '<span class="badge-rank gold">🥇</span>';
+                else if (rank === 2) rankCell.innerHTML = '<span class="badge-rank silver">🥈</span>';
+                else if (rank === 3) rankCell.innerHTML = '<span class="badge-rank bronze">🥉</span>';
+                else                 rankCell.innerHTML = '<span class="rank-num">' + rank + '</span>';
+            });
+        }
+
+        // Apply default sort (highest score first) on page load
+        window.addEventListener("DOMContentLoaded", function() { sortTable(); });
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Results | {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* --- Table & Container Styles --- */
+.table-container {
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    text-align: left;
+    padding: 16px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f8fafc;
+    vertical-align: middle;
+}
+
+/* --- Ranking Badges --- */
+.badge-rank { font-size: 1.5rem; }
+.rank-num { font-weight: 800; color: #cbd5e1; font-size: 1.1rem; }
+
+/* --- Candidate Name Cell --- */
+.name-cell { display: flex; flex-direction: column; }
+.c-name { font-weight: 700; color: var(--text-dark); font-size: 0.95rem; }
+.c-email { font-size: 0.8rem; color: var(--text-muted); }
+
+/* --- Score Visualization --- */
+.score-viz { display: flex; align-items: center; gap: 12px; }
+.progress-container { flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.score-text { font-weight: 800; font-size: 0.9rem; min-width: 40px; }
+
+.bg-pass { background: #10b981; }
+.bg-mid  { background: #f59e0b; }
+.bg-fail { background: #ef4444; }
+
+/* --- Search & Filters --- */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.search-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.btn-export {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover { background: #edf2f7; }
+
+/* --- Pills --- */
+.pill { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.pill-completed { background: #dcfce7; color: #166534; }
+.pill-pending { background: #fff7ed; color: #9a3412; }
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li class="active"><a href="#"><i class="fas fa-poll"></i> Test Results</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <i class="fas fa-file-signature"></i> MCQ Results: <strong>{{ job.title }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back</a>
+                <button class="btn-export" onclick="window.print()"><i class="fas fa-download"></i> Export PDF</button>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% if results %}
+            
+            {% set total = results | length %}
+            {% set passing = results | selectattr('score', 'ge', 50) | list | length %}
+            {% set avg = (results | sum(attribute='score') / total) | round(1) %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ total }}</span>
+                        <span class="lbl">Total Submissions</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ passing }}</span>
+                        <span class="lbl">Passed (≥50)</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="stat-icon amber"><i class="fas fa-chart-pie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ avg }}%</span>
+                        <span class="lbl">Average Score</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="table-controls animate-slide-up">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="candidateSearch" placeholder="Search by name or email..." onkeyup="filterTable()">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Sort by:</span>
+                    <select id="scoreFilter" onchange="sortTable()">
+                        <option value="desc">Highest Score</option>
+                        <option value="asc">Lowest Score</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container animate-slide-up">
+                <table class="modern-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th width="80px">Rank</th>
+                            <th>Candidate Details</th>
+                            <th>Score Performance</th>
+                            <th>Status</th>
+                            <th>Submission Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td class="text-center">
+                                {% if loop.index == 1 %}<span class="badge-rank gold">🥇</span>
+                                {% elif loop.index == 2 %}<span class="badge-rank silver">🥈</span>
+                                {% elif loop.index == 3 %}<span class="badge-rank bronze">🥉</span>
+                                {% else %}<span class="rank-num">{{ loop.index }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <div class="name-cell">
+                                    <span class="c-name">{{ r.name }}</span>
+                                    <span class="c-email">{{ r.email }}</span>
+                                </div>
+                            </td>
+                            <td data-score="{{ r.score }}">
+                                <div class="score-viz">
+                                    <div class="progress-container">
+                                        <div class="progress-bar {% if r.score >= 70 %}bg-pass{% elif r.score >= 50 %}bg-mid{% else %}bg-fail{% endif %}" 
+                                             style="width: {{ r.score }}%"></div>
+                                    </div>
+                                    <span class="score-text">{{ r.score }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pill {% if r.status == 'Test Completed' %}pill-completed{% else %}pill-pending{% endif %}">
+                                    {{ r.status or 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="date-cell">{{ r.submission_time.split('.')[0] if r.submission_time else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state-new">
+                <i class="fas fa-inbox fa-3x"></i>
+                <h3>No Submissions Found</h3>
+                <p>Results will appear here once candidates complete the MCQ test.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("candidateSearch").value.toLowerCase();
+            let rows = document.querySelectorAll("#resultsTable tbody tr");
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? "" : "none";
+            });
+        }
+
+        function sortTable() {
+            let direction = document.getElementById("scoreFilter").value; // "asc" or "desc"
+            let tbody = document.querySelector("#resultsTable tbody");
+            let rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort(function(a, b) {
+                // Score is stored in data-score attribute on the 3rd td
+                let scoreA = parseFloat(a.querySelector("td[data-score]").getAttribute("data-score")) || 0;
+                let scoreB = parseFloat(b.querySelector("td[data-score]").getAttribute("data-score")) || 0;
+                return direction === "desc" ? scoreB - scoreA : scoreA - scoreB;
+            });
+
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Update rank badges after sort
+            rows.forEach(function(row, i) {
+                let rankCell = row.querySelector("td:first-child");
+                let rank = i + 1;
+                if (rank === 1)      rankCell.innerHTML = '<span class="badge-rank gold">🥇</span>';
+                else if (rank === 2) rankCell.innerHTML = '<span class="badge-rank silver">🥈</span>';
+                else if (rank === 3) rankCell.innerHTML = '<span class="badge-rank bronze">🥉</span>';
+                else                 rankCell.innerHTML = '<span class="rank-num">' + rank + '</span>';
+            });
+        }
+
+        // Apply default sort (highest score first) on page load
+        window.addEventListener("DOMContentLoaded", function() { sortTable(); });
+    </script>
+</body>
+</html>

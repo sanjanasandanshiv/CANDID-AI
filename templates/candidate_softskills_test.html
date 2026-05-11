@@ -1,0 +1,1103 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Soft Skills Interview</title>
+    <style>
+        /* CSS RESET & THEME */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; width: 100%; overflow-x: hidden; background-color: #eef2f6; }
+        
+        :root {
+            --card-bg: #ffffff;
+            --primary-blue: #5548d9;
+            --text-main: #1a202c;
+            --text-muted: #718096;
+            --danger: #d9534f;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .interview-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 1. Header Card */
+        .header-card {
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .header-card h1 { font-size: 1.2rem; color: var(--text-main); }
+        .header-card p { font-size: 0.9rem; color: var(--text-muted); }
+        .timer-badge {
+            background: #ffe5e5;
+            color: var(--danger);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* 2. Robot Interviewer Card */
+        .interviewer-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .bot-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #9f7aea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            transition: transform 0.3s ease;
+        }
+        .bot-icon.speaking {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(159, 122, 234, 0.6);
+        }
+        .interviewer-card h2 { font-size: 1.4rem; color: var(--text-main); margin-bottom: 10px; line-height: 1.4; }
+        .interviewer-card p { color: var(--text-muted); font-size: 0.9rem; }
+
+        /* 3. Media Feed Grid */
+        .media-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .video-container, .audio-container {
+            background: #000;
+            border-radius: 20px;
+            aspect-ratio: 16 / 10;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .audio-container {
+            background: #0d1117;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        canvas { width: 100%; height: 100px; position: absolute; top: 20%; opacity: 0.6; }
+        .label-tag {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            color: #fff;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            z-index: 2;
+        }
+        .audio-timer { color: #fff; font-size: 3rem; font-weight: bold; z-index: 2; }
+        .audio-subtag { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; z-index: 2; }
+
+        /* 4. Action Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .btn {
+            padding: 14px 35px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-retake { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; }
+        .btn-submit { background: var(--primary-blue); color: #fff; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Proctor Alert */
+        #proctor-alert {
+            display: none;
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Success Screen */
+        #done-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            padding: 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+<div class="interview-wrapper" id="main-ui">
+    <div id="proctor-alert">⚠️ Warning: Tab switch detected! This event has been logged.</div>
+    
+    <div class="header-card">
+        <div>
+            <h1>AI Soft Skills Interview</h1>
+            <p id="q-number">Question 1 of {{ questions|length }}</p>
+        </div>
+        <div class="timer-badge" id="global-timer">00:00</div>
+    </div>
+
+    <div class="interviewer-card">
+        <div class="bot-icon" id="bot-avatar">🤖</div>
+        <h2 id="q-text">Initialising Interviewer...</h2>
+        <p id="status-pill">AI is waking up...</p>
+    </div>
+
+    <div class="media-grid">
+        <div class="video-container">
+            <video id="liveVideo" autoplay muted playsinline></video>
+            <div class="label-tag">Live Camera Feed</div>
+        </div>
+        <div class="audio-container">
+            <canvas id="waveform"></canvas>
+            <div class="audio-timer" id="rec-timer">0:00</div>
+            <div class="audio-subtag">Audio Level</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-retake" onclick="retakeRecording()">🔄 Retake</button>
+        <button class="btn btn-submit" id="btn-submit" onclick="submitAnswer()">Submit Answer ➔</button>
+    </div>
+</div>
+
+<div id="done-screen">
+    <span style="font-size: 5rem;">🎉</span>
+    <h2 style="margin: 20px 0;">Interview Successfully Completed</h2>
+    <p style="color: #718096; margin-bottom: 30px;">Your assessment has been uploaded for HR review.</p>
+    <a href="{{ url_for('candidate_jobs') }}" class="btn btn-submit" style="text-decoration: none;">Return to Dashboard</a>
+</div>
+
+<script>
+    const QUESTIONS = {{ questions | tojson | safe }};
+    const JOB_ID = {{ job_id | int }};
+    let globalSeconds = {{ test.duration_minutes | default(30) | int }} * 60;
+    
+    let currentIndex = 0;
+    let mediaStream, mediaRecorder, audioContext, analyser, animationFrame;
+    let recordedChunks = [];
+    let recordings = {};
+    let isSubmitting = false;
+
+    // Start everything
+    async function init() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('liveVideo').srcObject = mediaStream;
+            
+            setupAudio();
+            startGlobalTimer();
+            setupProctoring();
+
+            if (QUESTIONS.length > 0) {
+                showQuestion(0);
+            }
+        } catch(e) {
+            alert("Error: Camera and Microphone are required for this interview.");
+        }
+    }
+
+    function setupAudio() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+        drawWave();
+    }
+
+    function drawWave() {
+        const canvas = document.getElementById('waveform');
+        const ctx = canvas.getContext('2d');
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(data);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#5548d9';
+        ctx.beginPath();
+
+        let sliceWidth = canvas.width / data.length;
+        let x = 0;
+        for (let i = 0; i < data.length; i++) {
+            let v = data[i] / 128.0;
+            let y = v * canvas.height / 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            x += sliceWidth;
+        }
+        ctx.stroke();
+        animationFrame = requestAnimationFrame(drawWave);
+    }
+
+    async function showQuestion(index) {
+        currentIndex = index;
+        document.getElementById('q-number').textContent = `Question ${index + 1} of ${QUESTIONS.length}`;
+        document.getElementById('q-text').textContent = QUESTIONS[index].q;
+        document.getElementById('status-pill').textContent = "AI is speaking...";
+        
+        // Disable buttons while speaking
+        document.getElementById('btn-submit').disabled = true;
+
+        const utter = new SpeechSynthesisUtterance(QUESTIONS[index].q);
+        document.getElementById('bot-avatar').classList.add('speaking');
+        
+        utter.onend = () => {
+            document.getElementById('bot-avatar').classList.remove('speaking');
+            document.getElementById('status-pill').textContent = "Recording Answer...";
+            startRecording();
+            document.getElementById('btn-submit').disabled = false;
+        };
+        window.speechSynthesis.speak(utter);
+    }
+
+    function startRecording() {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            recordings[currentIndex] = blob;
+        };
+        mediaRecorder.start();
+
+        let sec = 0;
+        const timerLabel = document.getElementById('rec-timer');
+        if (window.recInt) clearInterval(window.recInt);
+        
+        window.recInt = setInterval(() => {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                clearInterval(window.recInt);
+                return;
+            }
+            sec++;
+            timerLabel.textContent = `0:${sec.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    }
+
+    async function submitAnswer() {
+        stopRecording();
+        if (currentIndex + 1 < QUESTIONS.length) {
+            // Short delay to let Blob process
+            setTimeout(() => showQuestion(currentIndex + 1), 500);
+        } else {
+            submitAll();
+        }
+    }
+
+    function retakeRecording() {
+        stopRecording();
+        document.getElementById('rec-timer').textContent = '0:00';
+        setTimeout(() => startRecording(), 500);
+    }
+
+    async function submitAll() {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        document.getElementById('status-pill').textContent = "Finalizing upload...";
+
+        const formData = new FormData();
+        formData.append('job_id', JOB_ID);
+        
+        for (let i in recordings) {
+            formData.append(`audio_${parseInt(i) + 1}`, recordings[i], `answer_${i}.webm`);
+            formData.append(`answer_${parseInt(i) + 1}`, QUESTIONS[i].q);
+        }
+
+        try {
+            const res = await fetch(`/softskills/candidate/submit/${JOB_ID}`, { method: 'POST', body: formData });
+            if (res.ok) {
+                document.getElementById('main-ui').style.display = 'none';
+                document.getElementById('done-screen').style.display = 'flex';
+            }
+        } catch (e) {
+            alert("Upload failed. Please check your connection.");
+            isSubmitting = false;
+        }
+    }
+
+    function startGlobalTimer() {
+        const display = document.getElementById('global-timer');
+        setInterval(() => {
+            if (globalSeconds <= 0) return;
+            globalSeconds--;
+            let m = Math.floor(globalSeconds / 60);
+            let s = globalSeconds % 60;
+            display.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            if (globalSeconds === 0) submitAll();
+        }, 1000);
+    }
+
+    function setupProctoring() {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                document.getElementById('proctor-alert').style.display = 'block';
+            }
+        });
+    }
+
+    // Initialize on load
+    init();
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Soft Skills Interview</title>
+    <style>
+        /* CSS RESET & THEME */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; width: 100%; overflow-x: hidden; background-color: #eef2f6; }
+        
+        :root {
+            --card-bg: #ffffff;
+            --primary-blue: #5548d9;
+            --text-main: #1a202c;
+            --text-muted: #718096;
+            --danger: #d9534f;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .interview-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-card {
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .header-card h1 { font-size: 1.2rem; color: var(--text-main); }
+        .header-card p { font-size: 0.9rem; color: var(--text-muted); }
+        .timer-badge { background: #ffe5e5; color: var(--danger); padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+
+        .interviewer-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .bot-icon {
+            width: 80px; height: 80px; margin: 0 auto 20px; background: #9f7aea; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; transition: transform 0.3s ease;
+        }
+        .bot-icon.speaking { transform: scale(1.1); box-shadow: 0 0 20px rgba(159, 122, 234, 0.6); }
+        .interviewer-card h2 { font-size: 1.4rem; color: var(--text-main); margin-bottom: 10px; line-height: 1.4; }
+        .interviewer-card p { color: var(--text-muted); font-size: 0.9rem; }
+
+        .media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .video-container, .audio-container {
+            background: #000; border-radius: 20px; aspect-ratio: 16 / 10; position: relative; overflow: hidden; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .audio-container { background: #0d1117; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        canvas { width: 100%; height: 100px; position: absolute; top: 20%; opacity: 0.6; }
+        .label-tag { position: absolute; bottom: 15px; left: 15px; color: #fff; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; z-index: 2; }
+        .audio-timer { color: #fff; font-size: 3rem; font-weight: bold; z-index: 2; }
+        .audio-subtag { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; z-index: 2; margin-top: 5px;}
+
+        .controls { display: flex; justify-content: center; gap: 20px; }
+        .btn { padding: 14px 35px; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .btn-retake { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; }
+        .btn-submit { background: var(--primary-blue); color: #fff; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #proctor-alert { display: none; background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+        #done-screen { display: none; flex-direction: column; align-items: center; justify-content: center; background: #fff; padding: 60px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="interview-wrapper" id="main-ui">
+    <div id="proctor-alert">⚠️ Warning: Tab switch detected! This event has been logged.</div>
+    
+    <div class="header-card">
+        <div>
+            <h1>AI Soft Skills Interview</h1>
+            <p id="q-number">Question 1 of {{ questions|length }}</p>
+        </div>
+        <div class="timer-badge" id="global-timer">00:00</div>
+    </div>
+
+    <div class="interviewer-card">
+        <div class="bot-icon" id="bot-avatar">🤖</div>
+        <h2 id="q-text">Initialising Interviewer...</h2>
+        <p id="status-pill">AI is waking up...</p>
+    </div>
+
+    <div class="media-grid">
+        <div class="video-container">
+            <video id="liveVideo" autoplay muted playsinline></video>
+            <div class="label-tag">Live Camera Feed</div>
+        </div>
+        <div class="audio-container">
+            <canvas id="waveform"></canvas>
+            <div class="audio-timer" id="rec-timer">0:00</div>
+            <div class="audio-subtag">Audio Level</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-retake" onclick="retakeRecording()">🔄 Retake</button>
+        <button class="btn btn-submit" id="btn-submit" onclick="submitAnswer()">Submit Answer ➔</button>
+    </div>
+</div>
+
+<div id="done-screen">
+    <span style="font-size: 5rem;">🎉</span>
+    <h2 style="margin: 20px 0;">Interview Successfully Completed</h2>
+    <p style="color: #718096; margin-bottom: 30px;">Your assessment has been uploaded for HR review.</p>
+    <a href="{{ url_for('candidate_jobs') }}" class="btn btn-submit" style="text-decoration: none;">Return to Dashboard</a>
+</div>
+
+<script>
+    const QUESTIONS = {{ questions | tojson | safe }};
+    const JOB_ID = {{ job_id | int }};
+    let globalSeconds = {{ test.duration_minutes | default(30) | int }} * 60;
+    
+    let currentIndex = 0;
+    let mediaStream, mediaRecorder, audioContext, analyser, animationFrame;
+    let recordedChunks = [];
+    let recordings = {};
+    let isSubmitting = false;
+
+    async function init() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('liveVideo').srcObject = mediaStream;
+            
+            setupAudio();
+            startGlobalTimer();
+            setupProctoring();
+
+            if (QUESTIONS.length > 0) {
+                showQuestion(0);
+            }
+        } catch(e) {
+            alert("Error: Camera and Microphone are required for this interview.");
+        }
+    }
+
+    function setupAudio() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+        drawWave();
+    }
+
+    function drawWave() {
+        const canvas = document.getElementById('waveform');
+        const ctx = canvas.getContext('2d');
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(data);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#5548d9';
+        ctx.beginPath();
+
+        let sliceWidth = canvas.width / data.length;
+        let x = 0;
+        for (let i = 0; i < data.length; i++) {
+            let v = data[i] / 128.0;
+            let y = v * canvas.height / 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            x += sliceWidth;
+        }
+        ctx.stroke();
+        animationFrame = requestAnimationFrame(drawWave);
+    }
+
+    async function showQuestion(index) {
+        currentIndex = index;
+        document.getElementById('q-number').textContent = `Question ${index + 1} of ${QUESTIONS.length}`;
+        document.getElementById('q-text').textContent = QUESTIONS[index].q;
+        document.getElementById('status-pill').textContent = "AI is speaking...";
+        
+        document.getElementById('btn-submit').disabled = true;
+
+        const utter = new SpeechSynthesisUtterance(QUESTIONS[index].q);
+        document.getElementById('bot-avatar').classList.add('speaking');
+        
+        utter.onend = () => {
+            document.getElementById('bot-avatar').classList.remove('speaking');
+            document.getElementById('status-pill').textContent = "Recording Answer...";
+            startRecording();
+            document.getElementById('btn-submit').disabled = false;
+        };
+        window.speechSynthesis.speak(utter);
+    }
+
+    function startRecording() {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            recordings[currentIndex] = blob;
+        };
+        mediaRecorder.start();
+
+        let sec = 0;
+        const timerLabel = document.getElementById('rec-timer');
+        if (window.recInt) clearInterval(window.recInt);
+        
+        window.recInt = setInterval(() => {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                clearInterval(window.recInt);
+                return;
+            }
+            sec++;
+            timerLabel.textContent = `0:${sec.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    }
+
+    async function submitAnswer() {
+        stopRecording();
+        if (currentIndex + 1 < QUESTIONS.length) {
+            setTimeout(() => showQuestion(currentIndex + 1), 500);
+        } else {
+            submitAll();
+        }
+    }
+
+    function retakeRecording() {
+        stopRecording();
+        document.getElementById('rec-timer').textContent = '0:00';
+        setTimeout(() => startRecording(), 500);
+    }
+
+    async function submitAll() {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        document.getElementById('status-pill').textContent = "Finalizing upload...";
+        document.getElementById('btn-submit').disabled = true;
+
+        const formData = new FormData();
+        
+        for (let i in recordings) {
+            // Send files to the new API endpoint
+            formData.append(`audio_${parseInt(i) + 1}`, recordings[i], `answer_${i}.webm`);
+            formData.append(`answer_${parseInt(i) + 1}`, QUESTIONS[i].q);
+        }
+
+        try {
+            // HITTING THE NEW ROUTE
+            const res = await fetch(`/api/submit_softskills/${JOB_ID}`, { method: 'POST', body: formData });
+            if (res.ok) {
+                document.getElementById('main-ui').style.display = 'none';
+                document.getElementById('done-screen').style.display = 'flex';
+                
+                // Cleanup hardware
+                if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+                if(audioContext) audioContext.close();
+            } else {
+                alert("Upload failed. Server error.");
+                isSubmitting = false;
+                document.getElementById('btn-submit').disabled = false;
+            }
+        } catch (e) {
+            alert("Upload failed. Please check your connection.");
+            isSubmitting = false;
+            document.getElementById('btn-submit').disabled = false;
+        }
+    }
+
+    function startGlobalTimer() {
+        const display = document.getElementById('global-timer');
+        setInterval(() => {
+            if (globalSeconds <= 0) return;
+            globalSeconds--;
+            let m = Math.floor(globalSeconds / 60);
+            let s = globalSeconds % 60;
+            display.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            if (globalSeconds === 0) submitAll();
+        }, 1000);
+    }
+
+    function setupProctoring() {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                document.getElementById('proctor-alert').style.display = 'block';
+            }
+        });
+    }
+
+    init();
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Soft Skills Interview</title>
+    <style>
+        /* Strict CSS Reset to wipe out old styles */
+        html, body, div, span, h1, h2, p, a, video, canvas, button { 
+            margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; box-sizing: border-box; 
+        }
+        
+        body {
+            background-color: #eef2f6 !important;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .interview-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .header-card {
+            background: #ffffff; padding: 15px 25px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .header-card h1 { font-size: 1.2rem; color: #1a202c; font-weight: bold;}
+        .header-card p { font-size: 0.9rem; color: #718096; margin-top: 5px;}
+        .timer-badge { background: #ffe5e5; color: #d9534f; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+
+        .interviewer-card {
+            background: #ffffff; border-radius: 20px; padding: 40px 30px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .bot-icon {
+            width: 80px; height: 80px; margin: 0 auto 20px; background: #9f7aea; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; transition: transform 0.3s ease;
+        }
+        .bot-icon.speaking { transform: scale(1.1); box-shadow: 0 0 20px rgba(159, 122, 234, 0.6); }
+        .interviewer-card h2 { font-size: 1.4rem; color: #1a202c; margin-bottom: 10px; line-height: 1.4; font-weight: bold;}
+        .interviewer-card p { color: #718096; font-size: 0.9rem; }
+
+        .media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .video-container, .audio-container {
+            background: #000; border-radius: 20px; aspect-ratio: 16 / 10; position: relative; overflow: hidden; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .audio-container { background: #0d1117; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        canvas { width: 100%; height: 100px; position: absolute; top: 20%; opacity: 0.6; }
+        .label-tag { position: absolute; bottom: 15px; left: 15px; color: #fff; font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; z-index: 2; }
+        .audio-timer { color: #fff; font-size: 3rem; font-weight: bold; z-index: 2; }
+        .audio-subtag { color: #718096; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; z-index: 2; margin-top: 5px;}
+
+        .controls { display: flex; justify-content: center; gap: 20px; }
+        .btn { padding: 14px 35px; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .btn-retake { background: #fff; color: #4a5568; border: 1px solid #e2e8f0; }
+        .btn-submit { background: #5548d9; color: #fff; border: none;}
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #done-screen { display: none; flex-direction: column; align-items: center; justify-content: center; background: #fff; padding: 60px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="interview-wrapper" id="main-ui">
+    <div class="header-card">
+        <div>
+            <h1>AI Soft Skills Interview</h1>
+            <p id="q-number">Question 1 of {{ questions|length }}</p>
+        </div>
+        <div class="timer-badge" id="global-timer">00:00</div>
+    </div>
+
+    <div class="interviewer-card">
+        <div class="bot-icon" id="bot-avatar">🤖</div>
+        <h2 id="q-text">Initialising Interviewer...</h2>
+        <p id="status-pill">AI is waking up...</p>
+    </div>
+
+    <div class="media-grid">
+        <div class="video-container">
+            <video id="liveVideo" autoplay muted playsinline></video>
+            <div class="label-tag">Live Camera Feed</div>
+        </div>
+        <div class="audio-container">
+            <canvas id="waveform"></canvas>
+            <div class="audio-timer" id="rec-timer">0:00</div>
+            <div class="audio-subtag">Audio Level</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-retake" onclick="retakeRecording()">🔄 Retake</button>
+        <button class="btn btn-submit" id="btn-submit" onclick="submitAnswer()">Submit Answer ➔</button>
+    </div>
+</div>
+
+<div id="done-screen">
+    <span style="font-size: 5rem;">🎉</span>
+    <h2 style="margin: 20px 0; font-weight: bold; font-size: 2rem;">Interview Completed</h2>
+    <p style="color: #718096; margin-bottom: 30px;">Your assessment has been successfully uploaded.</p>
+    <a href="{{ url_for('candidate_jobs') }}" class="btn btn-submit" style="text-decoration: none;">Return to Dashboard</a>
+</div>
+
+<script>
+    const QUESTIONS = {{ questions | tojson | safe }};
+    const JOB_ID = {{ job_id | int }};
+    let globalSeconds = {{ test.duration_minutes | default(30) | int }} * 60;
+    
+    let currentIndex = 0;
+    let mediaStream, mediaRecorder, audioContext, analyser, animationFrame;
+    let recordedChunks = [];
+    let recordings = {};
+    let isSubmitting = false;
+
+    async function init() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('liveVideo').srcObject = mediaStream;
+            
+            setupAudio();
+            startGlobalTimer();
+
+            if (QUESTIONS.length > 0) {
+                showQuestion(0);
+            }
+        } catch(e) {
+            alert("Error: Camera and Microphone are required for this interview.");
+        }
+    }
+
+    function setupAudio() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+        drawWave();
+    }
+
+    function drawWave() {
+        const canvas = document.getElementById('waveform');
+        const ctx = canvas.getContext('2d');
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(data);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#5548d9';
+        ctx.beginPath();
+
+        let sliceWidth = canvas.width / data.length;
+        let x = 0;
+        for (let i = 0; i < data.length; i++) {
+            let v = data[i] / 128.0;
+            let y = v * canvas.height / 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            x += sliceWidth;
+        }
+        ctx.stroke();
+        animationFrame = requestAnimationFrame(drawWave);
+    }
+
+    async function showQuestion(index) {
+        currentIndex = index;
+        document.getElementById('q-number').textContent = `Question ${index + 1} of ${QUESTIONS.length}`;
+        document.getElementById('q-text').textContent = QUESTIONS[index].q;
+        document.getElementById('status-pill').textContent = "AI is speaking...";
+        
+        document.getElementById('btn-submit').disabled = true;
+
+        const utter = new SpeechSynthesisUtterance(QUESTIONS[index].q);
+        document.getElementById('bot-avatar').classList.add('speaking');
+        
+        utter.onend = () => {
+            document.getElementById('bot-avatar').classList.remove('speaking');
+            document.getElementById('status-pill').textContent = "Recording Answer...";
+            startRecording();
+            document.getElementById('btn-submit').disabled = false;
+        };
+        window.speechSynthesis.speak(utter);
+    }
+
+    function startRecording() {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            recordings[currentIndex] = blob;
+        };
+        mediaRecorder.start();
+
+        let sec = 0;
+        const timerLabel = document.getElementById('rec-timer');
+        if (window.recInt) clearInterval(window.recInt);
+        
+        window.recInt = setInterval(() => {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                clearInterval(window.recInt);
+                return;
+            }
+            sec++;
+            timerLabel.textContent = `0:${sec.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    // function stopRecording() {
+    //     if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    // }
+
+    // async function submitAnswer() {
+    //     stopRecording();
+    //     if (currentIndex + 1 < QUESTIONS.length) {
+    //         setTimeout(() => showQuestion(currentIndex + 1), 500);
+    //     } else {
+    //         submitAll();
+    //     }
+    // }
+
+    // function retakeRecording() {
+    //     stopRecording();
+    //     document.getElementById('rec-timer').textContent = '0:00';
+    //     setTimeout(() => startRecording(), 500);
+    // }
+
+
+
+
+    // 🟢 1. FORCE THE BROWSER TO WAIT FOR THE VIDEO TO COMPILE
+    function stopRecording() {
+        return new Promise(resolve => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                // Overwrite the stop event to resolve our Promise
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    recordings[currentIndex] = blob;
+                    resolve(); // Allows the code to proceed ONLY when saving is done
+                };
+                mediaRecorder.stop();
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    // 🟢 2. AWAIT THE COMPILATION BEFORE UPLOADING
+    async function submitAnswer() {
+        const submitBtn = document.getElementById('btn-submit');
+        if (submitBtn.disabled) return;
+        
+        submitBtn.disabled = true;
+        document.getElementById('status-pill').textContent = "Processing video...";
+
+        // Wait securely for the video file to be created in memory
+        await stopRecording();
+        
+        if (currentIndex + 1 < QUESTIONS.length) {
+            setTimeout(() => showQuestion(currentIndex + 1), 500);
+        } else {
+            submitAll();
+        }
+    }
+
+    // 🟢 3. FIX RETAKE FUNCTION TO USE AWAIT
+    async function retakeRecording() {
+        await stopRecording();
+        document.getElementById('rec-timer').textContent = '0:00';
+        setTimeout(() => startRecording(), 500);
+    }
+
+    async function submitAll() {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        document.getElementById('status-pill').textContent = "Finalizing upload...";
+        document.getElementById('btn-submit').disabled = true;
+
+        const formData = new FormData();
+        
+        for (let i in recordings) {
+            formData.append(`audio_${parseInt(i) + 1}`, recordings[i], `answer_${i}.webm`);
+            formData.append(`answer_${parseInt(i) + 1}`, QUESTIONS[i].q);
+        }
+
+        try {
+            // Updated to hit the safe API route
+            const res = await fetch(`/api/submit_softskills/${JOB_ID}`, { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            if (res.ok && data.success) {
+                document.getElementById('main-ui').style.display = 'none';
+                document.getElementById('done-screen').style.display = 'flex';
+                
+                if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+                if(audioContext) audioContext.close();
+            } else {
+                alert("Upload failed: " + data.message);
+                isSubmitting = false;
+                document.getElementById('btn-submit').disabled = false;
+            }
+        } catch (e) {
+            alert("Upload failed. Please check your connection.");
+            isSubmitting = false;
+            document.getElementById('btn-submit').disabled = false;
+        }
+    }
+
+    function startGlobalTimer() {
+        const display = document.getElementById('global-timer');
+        setInterval(() => {
+            if (globalSeconds <= 0) return;
+            globalSeconds--;
+            let m = Math.floor(globalSeconds / 60);
+            let s = globalSeconds % 60;
+            display.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            if (globalSeconds === 0) submitAll();
+        }, 1000);
+    }
+
+    // Clean browser cache just in case
+    window.onload = () => {
+        const extraneousContent = document.querySelectorAll('body > *:not(#main-ui):not(#done-screen):not(script)');
+        extraneousContent.forEach(el => el.remove());
+        init();
+    };
+</script>
+</body>
+</html>

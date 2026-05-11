@@ -1,0 +1,3406 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.title if test else 'Assessment' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* --- Clean Assessment Layout --- */
+        body { 
+            background: #f1f5f9; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            color: #1e293b;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 40px auto; 
+            background: #ffffff; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        /* --- Sticky Header & Timer --- */
+        .test-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        .test-header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; color: #0f172a; }
+        
+        #timer-container {
+            background: #fee2e2;
+            padding: 8px 16px;
+            border-radius: 99px;
+            border: 1px solid #fecaca;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #timer { font-size: 1.2rem; font-weight: 800; color: #b91c1c; font-family: monospace; }
+
+        /* --- Question Cards --- */
+        .test-q {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .current-q { display: block; }
+        
+        .q-meta { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            color: #2563eb; 
+            text-transform: uppercase; 
+            margin-bottom: 10px;
+        }
+        .q-text { 
+            font-size: 1.15rem; 
+            font-weight: 500; 
+            line-height: 1.6; 
+            color: #1e293b; 
+            margin-bottom: 25px; 
+        }
+
+        /* --- Input Styling --- */
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+        textarea:focus { border-color: #2563eb; outline: none; }
+
+        .option-label {
+            display: block;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
+        input[type="radio"]:checked + span { color: #2563eb; font-weight: 600; }
+        input[type="radio"] { margin-right: 12px; transform: scale(1.2); }
+
+        /* --- Locked State --- */
+        .locked-q {
+            pointer-events: none;
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        /* --- Navigation Buttons --- */
+        .nav-buttons { 
+            display: flex; 
+            justify-content: flex-end; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s, background 0.2s;
+        }
+        #next-button { background: #2563eb; color: white; }
+        #next-button:hover { background: #1d4ed8; }
+        #submit-button { background: #16a34a; color: white; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Progress Bar --- */
+        .progress-track {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #2563eb;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-header">
+            <h2>{{ test.title if test else 'Technical Assessment' }}</h2>
+            <div id="timer-container">
+                <span style="font-size: 0.9rem; font-weight: bold; color: #b91c1c;">⏱</span>
+                <span id="timer">--:--</span>
+            </div>
+        </div>
+
+        {% if not can_start %}
+            <div style="text-align: center; padding: 40px;">
+                <h3 style="color: #ef4444;">⏳ Test Not Yet Available</h3>
+                <p>{{ time_status }}</p>
+                <a href="{{ url_for('candidate_jobs') }}" class="btn" style="background: #64748b; color: white; text-decoration: none; display: inline-block; margin-top: 20px;">Return to Dashboard</a>
+            </div>
+        {% elif test %}
+
+            {% set questions = test.questions_json | from_json %}
+            
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <form id="test-form"
+                  method="POST"
+                  action="{{ url_for('candidate_submit_test', job_id=test.job_id) }}"
+                  data-duration="{{ test.duration_minutes | default(0) }}"
+                  data-qcount="{{ questions | length if questions else 0 }}">
+
+                {% if questions %}
+                    {% for q in questions %}
+                        <div class="test-q" id="q-{{ loop.index }}">
+                            <div class="q-meta">Question {{ loop.index }} of {{ questions | length }}</div>
+                            <div class="q-text">{{ q.q }}</div>
+
+                            {% if q.type == 'text' or q.type == 'audio_text' %}
+                                <textarea name="q_{{ loop.index }}" rows="6" required placeholder="Type your detailed answer here..."></textarea>
+
+                            {% elif q.type == 'radio' %}
+                                <div class="options-group">
+                                    {% for option in q.options %}
+                                        <label class="option-label">
+                                            <input type="radio" name="q_{{ loop.index }}" value="{{ option }}"> 
+                                            <span>{{ option }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:#f59e0b; text-align: center; padding: 20px;">⚠️ No questions found. Please notify HR support.</p>
+                {% endif %}
+
+                <div class="nav-buttons">
+                    <button type="button" id="next-button" class="btn">Next Question →</button>
+                    <button type="submit" id="submit-button" class="btn" style="display:none;">✅ Submit Assessment</button>
+                </div>
+            </form>
+
+        {% endif %}
+    </div>
+
+    <script>
+        // --- Timer Logic ---
+        function startTimer(duration) {
+            let timerDisplay = document.getElementById('timer');
+            let timer = duration * 60;
+            let interval = setInterval(function () {
+                let minutes = parseInt(timer / 60, 10);
+                let seconds = parseInt(timer % 60, 10);
+                timerDisplay.textContent = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    timerDisplay.textContent = "TIME UP";
+                    document.getElementById('test-form').submit();
+                }
+            }, 1000);
+        }
+
+        // --- Proctoring Logic ---
+        let submitted = false;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && !submitted && document.getElementById('test-form')) {
+                alert("🚨 Tab switch detected! Your test will be submitted automatically for security.");
+                submitted = true;
+                document.getElementById('test-form').submit();
+            }
+        });
+
+        // --- Navigation & Validation ---
+        window.onload = function () {
+            const testForm = document.getElementById('test-form');
+            if (!testForm) return;
+
+            const totalQuestions = parseInt(testForm.getAttribute('data-qcount'));
+            const durationMinutes = parseInt(testForm.getAttribute('data-duration'));
+            const questionDivs = document.querySelectorAll('.test-q');
+            const progressFill = document.getElementById('progress-fill');
+            
+            let currentIndex = 0;
+
+            function updateUI() {
+                questionDivs.forEach((q, i) => q.classList.toggle('current-q', i === currentIndex));
+                
+                // Progress Fill
+                const progress = ((currentIndex + 1) / totalQuestions) * 100;
+                progressFill.style.width = progress + '%';
+
+                // Button Visibility
+                const isLast = currentIndex === totalQuestions - 1;
+                document.getElementById('next-button').style.display = isLast ? 'none' : 'block';
+                document.getElementById('submit-button').style.display = isLast ? 'block' : 'none';
+            }
+
+            function validate() {
+                const currentQ = document.getElementById(`q-${currentIndex + 1}`);
+                const text = currentQ.querySelector('textarea');
+                const radios = currentQ.querySelectorAll('input[type="radio"]');
+                
+                if (text) return text.value.trim() !== '';
+                if (radios.length) return Array.from(radios).some(r => r.checked);
+                return true;
+            }
+
+            document.getElementById('next-button').addEventListener('click', () => {
+                if (!validate()) {
+                    alert("⚠️ Please answer the question before moving forward. Backtracking is disabled.");
+                    return;
+                }
+                currentIndex++;
+                updateUI();
+            });
+
+            if (questionDivs.length > 0) {
+                updateUI();
+                startTimer(durationMinutes);
+            }
+        };
+    </script>
+</body>
+</html> -->
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.title if test else 'Assessment' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* --- Clean Assessment Layout --- */
+        body { 
+            background: #f1f5f9; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            color: #1e293b;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 40px auto; 
+            background: #ffffff; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        /* --- Sticky Header & Timer --- */
+        .test-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        .test-header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; color: #0f172a; }
+        
+        #timer-container {
+            background: #fee2e2;
+            padding: 8px 16px;
+            border-radius: 99px;
+            border: 1px solid #fecaca;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #timer { font-size: 1.2rem; font-weight: 800; color: #b91c1c; font-family: monospace; }
+
+        /* --- Question Cards --- */
+        .test-q {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .current-q { display: block; }
+        
+        .q-meta { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            color: #2563eb; 
+            text-transform: uppercase; 
+            margin-bottom: 10px;
+        }
+        .q-text { 
+            font-size: 1.15rem; 
+            font-weight: 500; 
+            line-height: 1.6; 
+            color: #1e293b; 
+            margin-bottom: 25px; 
+        }
+
+        /* --- Input Styling --- */
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+        textarea:focus { border-color: #2563eb; outline: none; }
+
+        .option-label {
+            display: block;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover { border-color: #cbd5e1; background: #f8fafc; }
+        input[type="radio"]:checked + span { color: #2563eb; font-weight: 600; }
+        input[type="radio"] { margin-right: 12px; transform: scale(1.2); }
+
+        /* --- Locked State --- */
+        .locked-q {
+            pointer-events: none;
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        /* --- Navigation Buttons --- */
+        .nav-buttons { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s, background 0.2s;
+        }
+        #prev-button { background: #64748b; color: white; }
+        #next-button { background: #2563eb; color: white; }
+        #next-button:hover { background: #1d4ed8; }
+        #submit-button { background: #16a34a; color: white; }
+        #submit-button:hover { background: #15803d; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Progress Bar --- */
+        .progress-track {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #2563eb;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* --- Error Message --- */
+        .error-message {
+            background: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #991b1b;
+        }
+
+        /* --- Debug Info (hidden by default) --- */
+        .debug-info {
+            background: #f1f5f9;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .debug-info.show {
+            display: block;
+        }
+        
+        .toggle-debug {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .toggle-debug:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-debug" onclick="toggleDebug()">🐛 Debug Info</button>
+    
+    <div class="container">
+        <div class="test-header">
+            <h2>{{ test.title if test else 'Technical Assessment' }}</h2>
+            <div id="timer-container">
+                <span style="font-size: 0.9rem; font-weight: bold; color: #b91c1c;">⏱</span>
+                <span id="timer">--:--</span>
+            </div>
+        </div>
+
+        {% if not can_start %}
+            <div style="text-align: center; padding: 40px;">
+                <h3 style="color: #ef4444;">⏳ Test Not Yet Available</h3>
+                <p>{{ time_status }}</p>
+                <a href="{{ url_for('candidate_jobs') }}" class="btn" style="background: #64748b; color: white; text-decoration: none; display: inline-block; margin-top: 20px;">Return to Dashboard</a>
+            </div>
+        {% elif test %}
+            {% if test.questions_json %}
+                {% set questions = test.questions_json | from_json %}
+                
+                {% if questions and questions|length > 0 %}
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+
+                    <form id="test-form"
+                          method="POST"
+                          action="{{ url_for('candidate_submit_test', job_id=test.job_id) }}"
+                          data-duration="{{ test.duration_minutes | default(0) }}"
+                          data-qcount="{{ questions | length }}">
+
+                        {% for q in questions %}
+                            <div class="test-q" id="q-{{ loop.index }}" data-qtype="{{ q.type }}">
+                                <div class="q-meta">Question {{ loop.index }} of {{ questions | length }}</div>
+                                <div class="q-text">{{ q.q }}</div>
+
+                                {% if q.type == 'text' or q.type == 'audio_text' %}
+                                    <textarea name="q_{{ loop.index }}" rows="6" placeholder="Type your detailed answer here..."></textarea>
+
+                                {% elif q.type == 'radio' %}
+                                    <div class="options-group">
+                                        {% for option in q.options %}
+                                            <label class="option-label">
+                                                <input type="radio" name="q_{{ loop.index }}" value="{{ option }}"> 
+                                                <span>{{ option }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="error-message">
+                                        ⚠️ Unknown question type: {{ q.type }}
+                                    </div>
+                                    <textarea name="q_{{ loop.index }}" rows="4" placeholder="Type your answer here..."></textarea>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="nav-buttons">
+                            <button type="button" id="prev-button" class="btn" style="display:none;">← Previous</button>
+                            <button type="button" id="next-button" class="btn">Next Question →</button>
+                            <button type="submit" id="submit-button" class="btn" style="display:none;">✅ Submit Assessment</button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="error-message">
+                        <strong>⚠️ No questions found in the test!</strong><br>
+                        The test has been created but no questions are available. Please contact the administrator immediately.
+                    </div>
+                    <div class="debug-info show">
+                        <strong>Debug Information:</strong><br>
+                        Test ID: {{ test.id }}<br>
+                        Job ID: {{ test.job_id }}<br>
+                        Test Title: {{ test.title }}<br>
+                        Questions JSON Raw: <pre style="max-height: 200px; overflow: auto;">{{ test.questions_json[:500] if test.questions_json else 'None' }}</pre>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="error-message">
+                    <strong>⚠️ Test configuration error!</strong><br>
+                    No questions JSON found for this test. Please contact the administrator to set up the test questions.
+                </div>
+                <div class="debug-info show">
+                    <strong>Debug Information:</strong><br>
+                    Test ID: {{ test.id }}<br>
+                    Job ID: {{ test.job_id }}<br>
+                    Test Title: {{ test.title }}<br>
+                    Questions JSON: None or Empty
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="error-message">
+                <strong>⚠️ Test not found!</strong><br>
+                The test you're trying to access doesn't exist. Please contact the administrator.
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Debug toggle function
+        function toggleDebug() {
+            const debugDivs = document.querySelectorAll('.debug-info');
+            debugDivs.forEach(div => div.classList.toggle('show'));
+        }
+        
+        // --- Timer Logic ---
+        function startTimer(duration) {
+            if (!duration || duration <= 0) {
+                console.error('Invalid duration:', duration);
+                return;
+            }
+            
+            let timerDisplay = document.getElementById('timer');
+            let timer = duration * 60;
+            let interval = setInterval(function () {
+                let minutes = parseInt(timer / 60, 10);
+                let seconds = parseInt(timer % 60, 10);
+                timerDisplay.textContent = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    timerDisplay.textContent = "TIME UP";
+                    alert("Time's up! Your test will be submitted automatically.");
+                    document.getElementById('test-form').submit();
+                }
+            }, 1000);
+        }
+
+        // --- Proctoring Logic ---
+        let submitted = false;
+        document.addEventListener('visibilitychange', () => {
+            const testForm = document.getElementById('test-form');
+            if (document.visibilityState === 'hidden' && !submitted && testForm) {
+                alert("🚨 Tab switch detected! Your test will be submitted automatically for security.");
+                submitted = true;
+                testForm.submit();
+            }
+        });
+
+        // --- Navigation & Validation ---
+        window.onload = function () {
+            const testForm = document.getElementById('test-form');
+            if (!testForm) {
+                console.error('Test form not found!');
+                return;
+            }
+
+            const totalQuestions = parseInt(testForm.getAttribute('data-qcount'));
+            const durationMinutes = parseInt(testForm.getAttribute('data-duration'));
+            const questionDivs = document.querySelectorAll('.test-q');
+            const progressFill = document.getElementById('progress-fill');
+            const prevButton = document.getElementById('prev-button');
+            const nextButton = document.getElementById('next-button');
+            const submitButton = document.getElementById('submit-button');
+            
+            console.log('Test initialized with:', {
+                totalQuestions: totalQuestions,
+                durationMinutes: durationMinutes,
+                questionCount: questionDivs.length
+            });
+            
+            if (totalQuestions === 0 || questionDivs.length === 0) {
+                console.error('No questions found!');
+                return;
+            }
+            
+            let currentIndex = 0;
+
+            function updateUI() {
+                // Update question visibility
+                questionDivs.forEach((q, i) => {
+                    q.classList.toggle('current-q', i === currentIndex);
+                });
+                
+                // Update progress fill
+                const progress = ((currentIndex + 1) / totalQuestions) * 100;
+                if (progressFill) {
+                    progressFill.style.width = progress + '%';
+                }
+
+                // Update button visibility
+                if (prevButton) {
+                    prevButton.style.display = currentIndex > 0 ? 'block' : 'none';
+                }
+                
+                if (nextButton && submitButton) {
+                    const isLast = currentIndex === totalQuestions - 1;
+                    nextButton.style.display = isLast ? 'none' : 'block';
+                    submitButton.style.display = isLast ? 'block' : 'none';
+                }
+                
+                console.log(`Navigated to question ${currentIndex + 1}/${totalQuestions}`);
+            }
+
+            function validateCurrentQuestion() {
+                const currentQ = document.getElementById(`q-${currentIndex + 1}`);
+                if (!currentQ) return true;
+                
+                const textarea = currentQ.querySelector('textarea');
+                const radios = currentQ.querySelectorAll('input[type="radio"]');
+                const qtype = currentQ.getAttribute('data-qtype');
+                
+                if (textarea) {
+                    const isValid = textarea.value.trim() !== '';
+                    if (!isValid) {
+                        alert("⚠️ Please provide an answer before moving forward.");
+                        textarea.focus();
+                    }
+                    return isValid;
+                }
+                
+                if (radios && radios.length > 0) {
+                    const isChecked = Array.from(radios).some(r => r.checked);
+                    if (!isChecked) {
+                        alert("⚠️ Please select an option before moving forward.");
+                    }
+                    return isChecked;
+                }
+                
+                return true;
+            }
+
+            function saveCurrentAnswer() {
+                const currentQ = document.getElementById(`q-${currentIndex + 1}`);
+                if (!currentQ) return;
+                
+                const textarea = currentQ.querySelector('textarea');
+                const radios = currentQ.querySelectorAll('input[type="radio"]');
+                
+                if (textarea) {
+                    localStorage.setItem(`answer_${currentIndex}`, textarea.value);
+                } else if (radios.length > 0) {
+                    radios.forEach(radio => {
+                        if (radio.checked) {
+                            localStorage.setItem(`answer_${currentIndex}`, radio.value);
+                        }
+                    });
+                }
+            }
+            
+            function loadSavedAnswer(index) {
+                const saved = localStorage.getItem(`answer_${index}`);
+                if (!saved) return;
+                
+                const currentQ = document.getElementById(`q-${index + 1}`);
+                if (!currentQ) return;
+                
+                const textarea = currentQ.querySelector('textarea');
+                const radios = currentQ.querySelectorAll('input[type="radio"]');
+                
+                if (textarea) {
+                    textarea.value = saved;
+                } else if (radios.length > 0) {
+                    radios.forEach(radio => {
+                        if (radio.value === saved) {
+                            radio.checked = true;
+                        }
+                    });
+                }
+            }
+
+            if (nextButton) {
+                nextButton.addEventListener('click', () => {
+                    if (!validateCurrentQuestion()) return;
+                    saveCurrentAnswer();
+                    if (currentIndex < totalQuestions - 1) {
+                        currentIndex++;
+                        updateUI();
+                        loadSavedAnswer(currentIndex);
+                    }
+                });
+            }
+            
+            if (prevButton) {
+                prevButton.addEventListener('click', () => {
+                    if (currentIndex > 0) {
+                        saveCurrentAnswer();
+                        currentIndex--;
+                        updateUI();
+                        loadSavedAnswer(currentIndex);
+                    }
+                });
+            }
+            
+            if (submitButton) {
+                submitButton.addEventListener('click', (e) => {
+                    if (!validateCurrentQuestion()) {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    const confirmSubmit = confirm('Are you sure you want to submit your test? You cannot change your answers after submission.');
+                    if (!confirmSubmit) {
+                        e.preventDefault();
+                    } else {
+                        // Clear saved answers on submission
+                        for (let i = 0; i < totalQuestions; i++) {
+                            localStorage.removeItem(`answer_${i}`);
+                        }
+                    }
+                });
+            }
+
+            // Load first question and start timer
+            updateUI();
+            loadSavedAnswer(0);
+            
+            if (durationMinutes && durationMinutes > 0) {
+                startTimer(durationMinutes);
+            } else {
+                console.warn('No duration set for test');
+                document.getElementById('timer').textContent = '∞';
+            }
+            
+            // Log questions for debugging
+            console.log('Questions loaded:', Array.from(questionDivs).map((q, i) => {
+                const qtext = q.querySelector('.q-text')?.innerText || 'No text';
+                const qtype = q.getAttribute('data-qtype');
+                return `Q${i+1}: ${qtype} - ${qtext.substring(0, 50)}...`;
+            }));
+        };
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ test.title if test else 'Assessment' }}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      /* --- Clean Assessment Layout --- */
+      body {
+        background: #f1f5f9;
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: #1e293b;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      /* --- Sticky Header & Timer --- */
+      .test-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+      }
+
+      .test-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      #timer-container {
+        background: #fee2e2;
+        padding: 8px 16px;
+        border-radius: 99px;
+        border: 1px solid #fecaca;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #timer {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #b91c1c;
+        font-family: monospace;
+      }
+
+      /* --- Question Cards --- */
+      .test-q {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+
+      .current-q {
+        display: block;
+      }
+
+      .q-meta {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #2563eb;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .q-text {
+        font-size: 1.15rem;
+        font-weight: 500;
+        line-height: 1.6;
+        color: #1e293b;
+        margin-bottom: 25px;
+      }
+
+      /* --- Input Styling --- */
+      textarea {
+        width: 100%;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        resize: vertical;
+      }
+
+      textarea:focus {
+        border-color: #2563eb;
+        outline: none;
+      }
+
+      .option-label {
+        display: block;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .option-label:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+
+      input[type="radio"]:checked + span {
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      input[type="radio"] {
+        margin-right: 12px;
+        transform: scale(1.2);
+      }
+
+      /* --- Locked State --- */
+      .locked-q {
+        pointer-events: none;
+        opacity: 0.5;
+        filter: grayscale(1);
+      }
+
+      /* --- Navigation Buttons --- */
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .btn {
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        border: none;
+        transition:
+          transform 0.1s,
+          background 0.2s;
+      }
+
+      #prev-button {
+        background: #64748b;
+        color: white;
+      }
+
+      #next-button {
+        background: #2563eb;
+        color: white;
+      }
+
+      #next-button:hover {
+        background: #1d4ed8;
+      }
+
+      #submit-button {
+        background: #16a34a;
+        color: white;
+      }
+
+      #submit-button:hover {
+        background: #15803d;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* --- Progress Bar --- */
+      .progress-track {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #2563eb;
+        width: 0%;
+        transition: width 0.4s ease;
+      }
+
+      /* --- Error Message --- */
+      .error-message {
+        background: #fee2e2;
+        border-left: 4px solid #dc2626;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        color: #991b1b;
+      }
+
+      /* --- Debug Info (hidden by default) --- */
+      .debug-info {
+        background: #f1f5f9;
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        display: none;
+      }
+
+      .debug-info.show {
+        display: block;
+      }
+
+      .toggle-debug {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: #64748b;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 1000;
+      }
+
+      .toggle-debug:hover {
+        background: #475569;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button class="toggle-debug" onclick="toggleDebug()">🐛 Debug Info</button>
+
+    <div class="container">
+      <div class="test-header">
+        <h2>{{ test.title if test else 'Technical Assessment' }}</h2>
+        <div id="timer-container">
+          <span style="font-size: 0.9rem; font-weight: bold; color: #b91c1c"
+            >⏱</span
+          >
+          <span id="timer">--:--</span>
+        </div>
+      </div>
+
+      {% if not can_start %}
+      <div style="text-align: center; padding: 40px">
+        <h3 style="color: #ef4444">⏳ Test Not Yet Available</h3>
+        <p>{{ time_status }}</p>
+        <a
+          href="{{ url_for('candidate_jobs') }}"
+          class="btn"
+          style="
+            background: #64748b;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+          "
+          >Return to Dashboard</a
+        >
+      </div>
+      {% elif test %} {% if test.questions_json %} {% set questions =
+      test.questions_json | from_json %} {% if questions and questions|length >
+      0 %}
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <form
+        id="test-form"
+        method="POST"
+        action="{{ url_for('candidate_submit_test', job_id=test.job_id) }}"
+        data-duration="{{ test.duration_minutes | default(0) }}"
+        data-qcount="{{ questions | length }}"
+      >
+        {% for q in questions %}
+        <div class="test-q" id="q-{{ loop.index }}" data-qtype="{{ q.type }}">
+          <div class="q-meta">
+            Question {{ loop.index }} of {{ questions | length }}
+          </div>
+          <div class="q-text">{{ q.q }}</div>
+
+          <!-- {% if q.type == 'text' or q.type == 'audio_text' %}
+                                    <textarea name="q_{{ loop.index }}" rows="6" placeholder="Type your detailed answer here..."></textarea> -->
+
+          {% if q.type == 'text' %}
+          <textarea
+            name="q_{{ loop.index }}"
+            rows="6"
+            placeholder="Type your detailed answer here..."
+          ></textarea>
+
+          <!-- {% elif q.type == 'audio_text' %}
+
+                <!-- Hidden field to store audio -->
+          <!-- <input type="hidden" id="audio_{{ loop.index }}" name="q_{{ loop.index }}" />
+
+                <!-- Recording UI -->
+          <!-- <div style="margin-bottom: 15px">
+                    <button type="button" onclick="startRecording('audio_{{ loop.index }}')" class="btn"
+                        style="background: #2563eb; color: white">
+                        🎤 Start Recording
+                    </button>
+
+                    <button type="button" onclick="stopRecording()" class="btn"
+                        style="background: #ef4444; color: white">
+                        ⏹ Stop
+                    </button>
+
+                    <button type="button" onclick="retakeRecording('audio_{{ loop.index }}')" class="btn"
+                        style="background: #64748b; color: white">
+                        🔄 Retake
+                    </button>
+                </div>
+
+                 Status -->
+          <!-- <p id="status_{{ loop.index }}" style="color: #2563eb; font-weight: 600">
+                    ⏺ Not Recording
+                </p> -->
+
+          <!-- Fallback textarea -->
+          <!-- <textarea rows="4" placeholder="(Optional) Type if audio not working..."></textarea>
+
+                {% elif q.type == 'radio' %}
+                <div class="options-group">
+                    {% for option in q.options %}
+                    <label class="option-label">
+                        <input type="radio" name="q_{{ loop.index }}" value="{{ option }}" />
+                        <span>{{ option }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="error-message">
+                    ⚠️ Unknown question type: {{ q.type }}
+                </div>
+                <textarea name="q_{{ loop.index }}" rows="4" placeholder="Type your answer here..."></textarea>
+                {% endif %} -->
+
+          {% elif q.type == 'audio_text' %}
+
+          <!-- Hidden field to store audio data -->
+          <input
+            type="hidden"
+            id="audio_{{ loop.index }}"
+            name="q_{{ loop.index }}"
+          />
+
+          <!-- Recording UI -->
+          <div
+            style="
+              margin-bottom: 15px;
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+            "
+          >
+            <button
+              type="button"
+              onclick="startRecording('audio_{{ loop.index }}')"
+              class="btn"
+              style="background: #2563eb; color: white; padding: 10px 20px"
+            >
+              🎤 Start Recording
+            </button>
+
+            <button
+              type="button"
+              onclick="stopRecording()"
+              class="btn"
+              style="background: #ef4444; color: white; padding: 10px 20px"
+              disabled
+            >
+              ⏹ Stop Recording
+            </button>
+
+            <button
+              type="button"
+              onclick="retakeRecording('audio_{{ loop.index }}')"
+              class="btn"
+              style="background: #64748b; color: white; padding: 10px 20px"
+            >
+              🔄 Retake
+            </button>
+          </div>
+
+          <!-- Recording Status -->
+          <p
+            id="status_{{ loop.index }}"
+            style="color: #64748b; font-weight: 600; margin-top: 10px"
+          >
+            ⏺ Click "Start Recording" to begin
+          </p>
+
+          <!-- Optional text fallback (not required) -->
+          <textarea
+            rows="3"
+            placeholder="(Optional) You can also type your answer here if audio is not working..."
+            style="margin-top: 10px"
+          ></textarea>
+
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="nav-buttons">
+          <button
+            type="button"
+            id="prev-button"
+            class="btn"
+            style="display: none"
+          >
+            ← Previous
+          </button>
+          <button type="button" id="next-button" class="btn">
+            Next Question →
+          </button>
+          <button
+            type="submit"
+            id="submit-button"
+            class="btn"
+            style="display: none"
+          >
+            ✅ Submit Assessment
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <div class="error-message">
+        <strong>⚠️ No questions found in the test!</strong><br />
+        The test has been created but no questions are available. Please contact
+        the administrator immediately.
+      </div>
+      <div class="debug-info show">
+        <strong>Debug Information:</strong><br />
+        Test ID: {{ test.id }}<br />
+        Job ID: {{ test.job_id }}<br />
+        Test Title: {{ test.title }}<br />
+        Questions JSON Raw:
+        <pre style="max-height: 200px; overflow: auto">
+{{ test.questions_json[:500] if test.questions_json else 'None' }}</pre
+        >
+      </div>
+      {% endif %} {% else %}
+      <div class="error-message">
+        <strong>⚠️ Test configuration error!</strong><br />
+        No questions JSON found for this test. Please contact the administrator
+        to set up the test questions.
+      </div>
+      <div class="debug-info show">
+        <strong>Debug Information:</strong><br />
+        Test ID: {{ test.id }}<br />
+        Job ID: {{ test.job_id }}<br />
+        Test Title: {{ test.title }}<br />
+        Questions JSON: None or Empty
+      </div>
+      {% endif %} {% else %}
+      <div class="error-message">
+        <strong>⚠️ Test not found!</strong><br />
+        The test you're trying to access doesn't exist. Please contact the
+        administrator.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- <script>
+      // Debug toggle
+      function toggleDebug() {
+        document
+          .querySelectorAll(".debug-info")
+          .forEach((div) => div.classList.toggle("show"));
+      }
+
+      // TIMER
+      function startTimer(duration) {
+        let timerDisplay = document.getElementById("timer");
+        let timer = duration * 60;
+
+        let interval = setInterval(function () {
+          let minutes = Math.floor(timer / 60);
+          let seconds = timer % 60;
+
+          timerDisplay.textContent =
+            (minutes < 10 ? "0" : "") +
+            minutes +
+            ":" +
+            (seconds < 10 ? "0" : "") +
+            seconds;
+
+          if (--timer < 0) {
+            clearInterval(interval);
+            alert("⏰ Time's up! Submitting test...");
+            document.getElementById("test-form").submit();
+          }
+        }, 1000);
+      }
+
+      // PROCTORING
+      let submitted = false;
+      document.addEventListener("visibilitychange", () => {
+        const form = document.getElementById("test-form");
+        if (document.visibilityState === "hidden" && !submitted && form) {
+          alert("🚨 Tab switch detected! Auto submitting.");
+          submitted = true;
+          form.submit();
+        }
+      });
+
+      // AUDIO LOGIC
+      let mediaRecorder;
+      let audioChunks = [];
+      let streamRef = null;
+
+      async function startRecording(qId) {
+        try {
+          audioChunks = [];
+
+          // CHECK SUPPORT
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("❌ Your browser does not support audio recording");
+            return;
+          }
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          streamRef = stream;
+
+          mediaRecorder = new MediaRecorder(stream);
+
+          const statusId = qId.replace("audio_", "status_");
+          document.getElementById(statusId).innerText = "🔴 Recording...";
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              audioChunks.push(e.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: "audio/webm" });
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              document.getElementById(qId).value = reader.result;
+              document.getElementById(statusId).innerText = "✅ Recorded";
+            };
+
+            reader.readAsDataURL(blob);
+
+            // STOP MIC (IMPORTANT)
+            streamRef.getTracks().forEach((track) => track.stop());
+          };
+
+          mediaRecorder.start();
+        } catch (err) {
+          console.error(err);
+
+          if (err.name === "NotAllowedError") {
+            alert("❌ Microphone permission denied. Please allow it.");
+          } else {
+            alert("❌ Error accessing microphone");
+          }
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
+      }
+
+      function retakeRecording(qId) {
+        document.getElementById(qId).value = "";
+        document.getElementById(qId.replace("audio_", "status_")).innerText =
+          "🔄 Retake again";
+      } -->
+
+    <!-- //   let mediaRecorder;
+      //   let audioChunks = [];
+      //   let currentStatusId = null;
+
+      //   async function startRecording(qId) {
+      //     try {
+      //       audioChunks = [];
+
+      //       const stream = await navigator.mediaDevices.getUserMedia({
+      //         audio: true,
+      //       });
+      //       mediaRecorder = new MediaRecorder(stream);
+
+      //       currentStatusId = qId.replace("audio_", "status_");
+      //       document.getElementById(currentStatusId).innerText =
+      //         "🔴 Recording...";
+
+      //       mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+      //       mediaRecorder.onstop = () => {
+      //         const blob = new Blob(audioChunks, { type: "audio/webm" });
+      //         const reader = new FileReader();
+
+      //         reader.onloadend = () => {
+      //           document.getElementById(qId).value = reader.result;
+      //           document.getElementById(currentStatusId).innerText =
+      //             "✅ Recorded";
+      //         };
+
+      //         reader.readAsDataURL(blob);
+      //       };
+
+      //       mediaRecorder.start();
+      //     } catch (err) {
+      //       alert("❌ Mic permission denied");
+      //       console.error(err);
+      //     }
+      //   }
+
+      //   function stopRecording() {
+      //     if (mediaRecorder) mediaRecorder.stop();
+      //   }
+
+      //   function retakeRecording(qId) {
+      //     document.getElementById(qId).value = "";
+      //     document.getElementById(qId.replace("audio_", "status_")).innerText =
+      //       "🔄 Retake again";
+      //   }
+
+      // MAIN LOGIC
+      window.onload = function () {
+        const form = document.getElementById("test-form");
+        if (!form) return;
+
+        const totalQuestions = parseInt(form.getAttribute("data-qcount"));
+        const duration = parseInt(form.getAttribute("data-duration"));
+
+        const questionDivs = document.querySelectorAll(".test-q");
+        const progressFill = document.getElementById("progress-fill");
+
+        const prevBtn = document.getElementById("prev-button");
+        const nextBtn = document.getElementById("next-button");
+        const submitBtn = document.getElementById("submit-button");
+
+        let currentIndex = 0;
+
+        function updateUI() {
+          questionDivs.forEach((q, i) => {
+            q.classList.toggle("current-q", i === currentIndex);
+          });
+
+          if (progressFill) {
+            progressFill.style.width =
+              ((currentIndex + 1) / totalQuestions) * 100 + "%";
+          }
+
+          prevBtn.style.display = currentIndex > 0 ? "block" : "none";
+
+          if (currentIndex === totalQuestions - 1) {
+            nextBtn.style.display = "none";
+            submitBtn.style.display = "block";
+          } else {
+            nextBtn.style.display = "block";
+            submitBtn.style.display = "none";
+          }
+        }
+
+        function validateCurrentQuestion() {
+          const currentQ = document.getElementById(`q-${currentIndex + 1}`);
+          if (!currentQ) return true;
+
+          const textarea = currentQ.querySelector("textarea");
+          const radios = currentQ.querySelectorAll('input[type="radio"]');
+          const audioInput = currentQ.querySelector('input[type="hidden"]');
+
+          // AUDIO
+          if (audioInput) {
+            if (!audioInput.value) {
+              alert("⚠️ Please record your answer.");
+              return false;
+            }
+            return true;
+          }
+
+          // TEXT
+          if (textarea) {
+            if (textarea.value.trim() === "") {
+              alert("⚠️ Please enter answer.");
+              return false;
+            }
+            return true;
+          }
+
+          // RADIO
+          if (radios.length > 0) {
+            if (![...radios].some((r) => r.checked)) {
+              alert("⚠️ Select an option.");
+              return false;
+            }
+            return true;
+          }
+
+          return true;
+        }
+
+        nextBtn.addEventListener("click", () => {
+          if (!validateCurrentQuestion()) return;
+          currentIndex++;
+          updateUI();
+        });
+
+        prevBtn.addEventListener("click", () => {
+          currentIndex--;
+          updateUI();
+        });
+
+        submitBtn.addEventListener("click", (e) => {
+          if (!validateCurrentQuestion()) {
+            e.preventDefault();
+            return;
+          }
+
+          if (!confirm("Submit test?")) {
+            e.preventDefault();
+          }
+        });
+
+        updateUI();
+
+        if (duration > 0) {
+          startTimer(duration);
+        } else {
+          document.getElementById("timer").innerText = "∞";
+        }
+      };
+    </script> -->
+
+    <!-- <script>
+      // Debug toggle
+      function toggleDebug() {
+        document
+          .querySelectorAll(".debug-info")
+          .forEach((div) => div.classList.toggle("show"));
+      }
+
+      // Global variables for audio recording
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let currentRecordingQuestion = null;
+      let mediaStream = null;
+
+      // TIMER
+      function startTimer(duration) {
+        let timerDisplay = document.getElementById("timer");
+        let timer = duration * 60;
+
+        let interval = setInterval(function () {
+          let minutes = Math.floor(timer / 60);
+          let seconds = timer % 60;
+
+          timerDisplay.textContent =
+            (minutes < 10 ? "0" : "") +
+            minutes +
+            ":" +
+            (seconds < 10 ? "0" : "") +
+            seconds;
+
+          if (--timer < 0) {
+            clearInterval(interval);
+            alert("⏰ Time's up! Submitting test...");
+            document.getElementById("test-form").submit();
+          }
+        }, 1000);
+      }
+
+      // PROCTORING - Tab switch detection
+      let submitted = false;
+      document.addEventListener("visibilitychange", () => {
+        const form = document.getElementById("test-form");
+        if (document.visibilityState === "hidden" && !submitted && form) {
+          alert("🚨 Tab switch detected! Auto submitting.");
+          submitted = true;
+          form.submit();
+        }
+      });
+
+      // AUDIO RECORDING FUNCTIONS
+      async function startRecording(questionId) {
+        try {
+          // Stop any existing recording
+          if (mediaRecorder && mediaRecorder.state === "recording") {
+            stopRecording();
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+
+          // Request microphone access
+          if (!mediaStream) {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+            });
+          }
+
+          // Create new MediaRecorder
+          mediaRecorder = new MediaRecorder(mediaStream);
+          audioChunks = [];
+          currentRecordingQuestion = questionId;
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+            const reader = new FileReader();
+
+            reader.onloadend = () => {
+              const audioDataUrl = reader.result;
+              document.getElementById(questionId).value = audioDataUrl;
+
+              // Update status
+              const statusElement = document.getElementById(
+                questionId.replace("audio_", "status_"),
+              );
+              if (statusElement) {
+                statusElement.innerHTML = "✅ Recorded";
+                statusElement.style.color = "#16a34a";
+              }
+            };
+
+            reader.readAsDataURL(audioBlob);
+          };
+
+          mediaRecorder.start();
+
+          // Update status
+          const statusElement = document.getElementById(
+            questionId.replace("audio_", "status_"),
+          );
+          if (statusElement) {
+            statusElement.innerHTML = "🔴 Recording...";
+            statusElement.style.color = "#dc2626";
+          }
+
+          // Disable start button, enable stop button
+          const startBtn = document.querySelector(
+            `button[onclick="startRecording('${questionId}')"]`,
+          );
+          const stopBtn = document.querySelector(
+            `button[onclick="stopRecording()"]`,
+          );
+          const retakeBtn = document.querySelector(
+            `button[onclick="retakeRecording('${questionId}')"]`,
+          );
+
+          if (startBtn) startBtn.disabled = true;
+          if (stopBtn) stopBtn.disabled = false;
+          if (retakeBtn) retakeBtn.disabled = false;
+        } catch (err) {
+          console.error("Microphone error:", err);
+          alert(
+            "❌ Microphone access denied. Please allow microphone access to record answers.",
+          );
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+
+          // Get current question ID
+          if (currentRecordingQuestion) {
+            const startBtn = document.querySelector(
+              `button[onclick="startRecording('${currentRecordingQuestion}')"]`,
+            );
+            const stopBtn = document.querySelector(
+              `button[onclick="stopRecording()"]`,
+            );
+            const retakeBtn = document.querySelector(
+              `button[onclick="retakeRecording('${currentRecordingQuestion}')"]`,
+            );
+
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+            if (retakeBtn) retakeBtn.disabled = false;
+          }
+        }
+      }
+
+      function retakeRecording(questionId) {
+        // Clear existing recording
+        document.getElementById(questionId).value = "";
+
+        // Update status
+        const statusElement = document.getElementById(
+          questionId.replace("audio_", "status_"),
+        );
+        if (statusElement) {
+          statusElement.innerHTML = "🔄 Ready to record again";
+          statusElement.style.color = "#64748b";
+        }
+
+        // Enable start button
+        const startBtn = document.querySelector(
+          `button[onclick="startRecording('${questionId}')"]`,
+        );
+        if (startBtn) startBtn.disabled = false;
+
+        // If currently recording, stop it
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          stopRecording();
+        }
+
+        // Small delay then start recording again
+        setTimeout(() => {
+          startRecording(questionId);
+        }, 500);
+      }
+
+      // Clean up media stream on page unload
+      window.addEventListener("beforeunload", () => {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((track) => track.stop());
+        }
+      });
+
+      // MAIN LOGIC - Question navigation
+      window.onload = function () {
+        const form = document.getElementById("test-form");
+        if (!form) return;
+
+        const totalQuestions = parseInt(form.getAttribute("data-qcount"));
+        const duration = parseInt(form.getAttribute("data-duration"));
+
+        const questionDivs = document.querySelectorAll(".test-q");
+        const progressFill = document.getElementById("progress-fill");
+
+        const prevBtn = document.getElementById("prev-button");
+        const nextBtn = document.getElementById("next-button");
+        const submitBtn = document.getElementById("submit-button");
+
+        let currentIndex = 0;
+
+        function updateUI() {
+          questionDivs.forEach((q, i) => {
+            q.classList.toggle("current-q", i === currentIndex);
+          });
+
+          if (progressFill) {
+            progressFill.style.width =
+              ((currentIndex + 1) / totalQuestions) * 100 + "%";
+          }
+
+          prevBtn.style.display = currentIndex > 0 ? "block" : "none";
+
+          if (currentIndex === totalQuestions - 1) {
+            nextBtn.style.display = "none";
+            submitBtn.style.display = "block";
+          } else {
+            nextBtn.style.display = "block";
+            submitBtn.style.display = "none";
+          }
+        }
+
+        function validateCurrentQuestion() {
+          const currentQ = document.getElementById(`q-${currentIndex + 1}`);
+          if (!currentQ) return true;
+
+          const textarea = currentQ.querySelector("textarea");
+          const radios = currentQ.querySelectorAll('input[type="radio"]');
+          const audioInput = currentQ.querySelector('input[type="hidden"]');
+
+          // AUDIO question validation
+          if (
+            audioInput &&
+            audioInput.id &&
+            audioInput.id.startsWith("audio_")
+          ) {
+            if (!audioInput.value) {
+              alert("⚠️ Please record your answer before proceeding.");
+              return false;
+            }
+            return true;
+          }
+
+          // TEXT question validation
+          if (textarea) {
+            if (textarea.value.trim() === "") {
+              alert("⚠️ Please enter your answer before proceeding.");
+              return false;
+            }
+            return true;
+          }
+
+          // RADIO question validation
+          if (radios.length > 0) {
+            if (![...radios].some((r) => r.checked)) {
+              alert("⚠️ Please select an option before proceeding.");
+              return false;
+            }
+            return true;
+          }
+
+          return true;
+        }
+
+        // Navigation event handlers
+        if (nextBtn) {
+          nextBtn.addEventListener("click", () => {
+            if (!validateCurrentQuestion()) return;
+            currentIndex++;
+            updateUI();
+          });
+        }
+
+        if (prevBtn) {
+          prevBtn.addEventListener("click", () => {
+            currentIndex--;
+            updateUI();
+          });
+        }
+
+        if (submitBtn) {
+          submitBtn.addEventListener("click", (e) => {
+            if (!validateCurrentQuestion()) {
+              e.preventDefault();
+              return;
+            }
+
+            if (
+              !confirm(
+                "Are you sure you want to submit your test? You cannot change answers after submission.",
+              )
+            ) {
+              e.preventDefault();
+            } else {
+              // Stop any ongoing recording before submission
+              if (mediaRecorder && mediaRecorder.state === "recording") {
+                stopRecording();
+                // Give a moment for the recording to save
+                setTimeout(() => {
+                  form.submit();
+                }, 500);
+                e.preventDefault();
+              }
+            }
+          });
+        }
+
+        // Initialize UI
+        updateUI();
+
+        // Start timer if duration is set
+        if (duration > 0) {
+          startTimer(duration);
+        } else {
+          const timerDisplay = document.getElementById("timer");
+          if (timerDisplay) timerDisplay.innerText = "∞";
+        }
+
+        // Initialize audio recording buttons state
+        const stopBtn = document.querySelector(
+          `button[onclick="stopRecording()"]`,
+        );
+        if (stopBtn) stopBtn.disabled = true;
+
+        // Ensure all start buttons are enabled initially
+        document
+          .querySelectorAll(`button[onclick^="startRecording"]`)
+          .forEach((btn) => {
+            btn.disabled = false;
+          });
+      };
+    </script>
+  </body>
+</html> --> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ test.title if test else 'Assessment' }}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      /* --- Clean Assessment Layout --- */
+      body {
+        background: #f1f5f9;
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: #1e293b;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      /* --- Sticky Header & Timer --- */
+      .test-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+      }
+
+      .test-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      #timer-container {
+        background: #fee2e2;
+        padding: 8px 16px;
+        border-radius: 99px;
+        border: 1px solid #fecaca;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #timer {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #b91c1c;
+        font-family: monospace;
+      }
+
+      /* --- Question Cards --- */
+      .test-q {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+
+      .current-q {
+        display: block;
+      }
+
+      .q-meta {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #2563eb;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .q-text {
+        font-size: 1.15rem;
+        font-weight: 500;
+        line-height: 1.6;
+        color: #1e293b;
+        margin-bottom: 25px;
+      }
+
+      /* --- Input Styling --- */
+      textarea {
+        width: 100%;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
+      textarea:focus {
+        border-color: #2563eb;
+        outline: none;
+      }
+
+      .option-label {
+        display: block;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .option-label:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+
+      input[type="radio"]:checked + span {
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      input[type="radio"] {
+        margin-right: 12px;
+        transform: scale(1.2);
+      }
+
+      /* --- Locked State --- */
+      .locked-q {
+        pointer-events: none;
+        opacity: 0.5;
+        filter: grayscale(1);
+      }
+
+      /* --- Navigation Buttons --- */
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .btn {
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        border: none;
+        transition:
+          transform 0.1s,
+          background 0.2s;
+      }
+
+      #prev-button {
+        background: #64748b;
+        color: white;
+      }
+
+      #next-button {
+        background: #2563eb;
+        color: white;
+      }
+
+      #next-button:hover {
+        background: #1d4ed8;
+      }
+
+      #submit-button {
+        background: #16a34a;
+        color: white;
+      }
+
+      #submit-button:hover {
+        background: #15803d;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* --- Progress Bar --- */
+      .progress-track {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #2563eb;
+        width: 0%;
+        transition: width 0.4s ease;
+      }
+
+      /* --- Error Message --- */
+      .error-message {
+        background: #fee2e2;
+        border-left: 4px solid #dc2626;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        color: #991b1b;
+      }
+
+      /* --- Audio Recording UI --- */
+      .audio-recording-wrap {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+      }
+
+      .audio-recording-wrap .rec-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .rec-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+
+      .rec-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .rec-btn-start { background: #2563eb; color: white; }
+      .rec-btn-stop  { background: #ef4444; color: white; }
+      .rec-btn-retake{ background: #64748b; color: white; }
+
+      .rec-status {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 10px;
+      }
+
+      .rec-status.recording { color: #dc2626; }
+      .rec-status.done      { color: #16a34a; }
+
+      /* --- Debug Info (hidden by default) --- */
+      .debug-info {
+        background: #f1f5f9;
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        display: none;
+      }
+
+      .debug-info.show {
+        display: block;
+      }
+
+      .toggle-debug {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: #64748b;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 1000;
+      }
+
+      .toggle-debug:hover {
+        background: #475569;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button class="toggle-debug" onclick="toggleDebug()">🐛 Debug Info</button>
+
+    <div class="container">
+      <div class="test-header">
+        <h2>{{ test.title if test else 'Technical Assessment' }}</h2>
+        <div id="timer-container">
+          <span style="font-size: 0.9rem; font-weight: bold; color: #b91c1c">⏱</span>
+          <span id="timer">--:--</span>
+        </div>
+      </div>
+
+      {% if not can_start %}
+      <div style="text-align: center; padding: 40px">
+        <h3 style="color: #ef4444">⏳ Test Not Yet Available</h3>
+        <p>{{ time_status }}</p>
+        <a
+          href="{{ url_for('candidate_jobs') }}"
+          class="btn"
+          style="background: #64748b; color: white; text-decoration: none; display: inline-block; margin-top: 20px;"
+          >Return to Dashboard</a
+        >
+      </div>
+      {% elif test %} {% if test.questions_json %} {% set questions =
+      test.questions_json | from_json %} {% if questions and questions|length > 0 %}
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <form
+        id="test-form"
+        method="POST"
+        action="{{ url_for('candidate_submit_test', job_id=test.job_id) }}"
+        data-duration="{{ test.duration_minutes | default(0) }}"
+        data-qcount="{{ questions | length }}"
+      >
+        {% for q in questions %}
+        <div class="test-q" id="q-{{ loop.index }}" data-qtype="{{ q.type }}">
+          <div class="q-meta">
+            Question {{ loop.index }} of {{ questions | length }}
+          </div>
+          <div class="q-text">{{ q.q }}</div>
+
+          {% if q.type == 'text' %}
+          <textarea
+            name="q_{{ loop.index }}"
+            rows="6"
+            placeholder="Type your detailed answer here..."
+          ></textarea>
+
+          {% elif q.type == 'audio_text' %}
+          # Hidden field stores the base64 audio data 
+          <input
+            type="hidden"
+            id="audio_{{ loop.index }}"
+            name="q_{{ loop.index }}"
+            value=""
+          />
+
+          <div class="audio-recording-wrap">
+            <div class="rec-buttons">
+              <button
+                type="button"
+                class="rec-btn rec-btn-start"
+                id="start_{{ loop.index }}"
+                onclick="startRecording({{ loop.index }})"
+              >🎤 Start Recording</button>
+
+              <button
+                type="button"
+                class="rec-btn rec-btn-stop"
+                id="stop_{{ loop.index }}"
+                onclick="stopRecording({{ loop.index }})"
+                disabled
+              >⏹ Stop Recording</button>
+
+              <button
+                type="button"
+                class="rec-btn rec-btn-retake"
+                id="retake_{{ loop.index }}"
+                onclick="retakeRecording({{ loop.index }})"
+                disabled
+              >🔄 Retake</button>
+            </div>
+
+            <div class="rec-status" id="status_{{ loop.index }}">
+              ⏺ Click "Start Recording" to begin your answer
+            </div>
+
+            # Audio playback after recording 
+            <audio id="playback_{{ loop.index }}" controls style="width:100%; display:none; margin-top:10px;"></audio>
+          </div>
+
+          # Optional text fallback 
+          <textarea
+            name="q_{{ loop.index }}_text"
+            rows="3"
+            placeholder="(Optional) You can also type your answer here..."
+            style="margin-top: 5px;"
+          ></textarea>
+
+          {% elif q.type == 'radio' %}
+          <div class="options-group">
+            {% for option in q.options %}
+            <label class="option-label">
+              <input type="radio" name="q_{{ loop.index }}" value="{{ option }}" />
+              <span>{{ option }}</span>
+            </label>
+            {% endfor %}
+          </div>
+
+          {% else %}
+          <div class="error-message">
+            ⚠️ Unknown question type: {{ q.type }}
+          </div>
+          <textarea name="q_{{ loop.index }}" rows="4" placeholder="Type your answer here..."></textarea>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="nav-buttons">
+          <button type="button" id="prev-button" class="btn" style="display: none">
+            ← Previous
+          </button>
+          <button type="button" id="next-button" class="btn">
+            Next Question →
+          </button>
+          <button type="submit" id="submit-button" class="btn" style="display: none">
+            ✅ Submit Assessment
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <div class="error-message">
+        <strong>⚠️ No questions found in the test!</strong><br />
+        The test has been created but no questions are available. Please contact the administrator immediately.
+      </div>
+      <div class="debug-info show">
+        <strong>Debug Information:</strong><br />
+        Test ID: {{ test.id }}<br />
+        Job ID: {{ test.job_id }}<br />
+        Test Title: {{ test.title }}<br />
+        Questions JSON Raw:
+        <pre style="max-height: 200px; overflow: auto">{{ test.questions_json[:500] if test.questions_json else 'None' }}</pre>
+      </div>
+      {% endif %} {% else %}
+      <div class="error-message">
+        <strong>⚠️ Test configuration error!</strong><br />
+        No questions JSON found for this test.
+      </div>
+      {% endif %} {% else %}
+      <div class="error-message">
+        <strong>⚠️ Test not found!</strong><br />
+        The test you're trying to access doesn't exist.
+      </div>
+      {% endif %}
+    </div>
+
+    <script>
+      // Debug toggle
+      function toggleDebug() {
+        document.querySelectorAll(".debug-info").forEach((div) => div.classList.toggle("show"));
+      }
+
+      // ── Audio recording state per question ──────────────────────────
+      const recState = {};  // { qIdx: { recorder, chunks, stream, hasRecording } }
+
+      async function startRecording(qIdx) {
+        try {
+          if (recState[qIdx] && recState[qIdx].recorder &&
+              recState[qIdx].recorder.state === 'recording') return;
+
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+          recState[qIdx] = {
+            recorder: null,
+            chunks: [],
+            stream: stream,
+            hasRecording: false
+          };
+
+          const recorder = new MediaRecorder(stream);
+          recState[qIdx].recorder = recorder;
+
+          recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recState[qIdx].chunks.push(e.data);
+          };
+
+          recorder.onstop = () => {
+            const blob = new Blob(recState[qIdx].chunks, { type: 'audio/webm' });
+            const url  = URL.createObjectURL(blob);
+
+            // Store base64 in hidden field for form submission
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              document.getElementById('audio_' + qIdx).value = reader.result;
+            };
+            reader.readAsDataURL(blob);
+
+            // Show playback
+            const pb = document.getElementById('playback_' + qIdx);
+            if (pb) { pb.src = url; pb.style.display = 'block'; }
+
+            recState[qIdx].hasRecording = true;
+
+            // Stop mic tracks
+            recState[qIdx].stream.getTracks().forEach(t => t.stop());
+
+            setStatus(qIdx, '✅ Recording saved! You can play it back, retake, or proceed.', 'done');
+            document.getElementById('start_'  + qIdx).disabled = false;
+            document.getElementById('stop_'   + qIdx).disabled = true;
+            document.getElementById('retake_' + qIdx).disabled = false;
+          };
+
+          recorder.start();
+
+          setStatus(qIdx, '🔴 Recording… speak your answer now.', 'recording');
+          document.getElementById('start_'  + qIdx).disabled = true;
+          document.getElementById('stop_'   + qIdx).disabled = false;
+          document.getElementById('retake_' + qIdx).disabled = true;
+
+        } catch (err) {
+          console.error('Mic error:', err);
+          if (err.name === 'NotAllowedError') {
+            setStatus(qIdx, '❌ Microphone permission denied. Please allow microphone access.', '');
+          } else {
+            setStatus(qIdx, '❌ Could not access microphone: ' + err.message, '');
+          }
+        }
+      }
+
+      function stopRecording(qIdx) {
+        const s = recState[qIdx];
+        if (s && s.recorder && s.recorder.state === 'recording') {
+          s.recorder.stop();
+        }
+      }
+
+      function retakeRecording(qIdx) {
+        // Clear existing recording
+        if (recState[qIdx]) {
+          if (recState[qIdx].recorder && recState[qIdx].recorder.state === 'recording') {
+            recState[qIdx].recorder.stop();
+          }
+          recState[qIdx].hasRecording = false;
+          recState[qIdx].chunks = [];
+        }
+
+        document.getElementById('audio_' + qIdx).value = '';
+
+        const pb = document.getElementById('playback_' + qIdx);
+        if (pb) { pb.src = ''; pb.style.display = 'none'; }
+
+        setStatus(qIdx, '🔄 Ready to record again. Click "Start Recording".', '');
+        document.getElementById('start_'  + qIdx).disabled = false;
+        document.getElementById('stop_'   + qIdx).disabled = true;
+        document.getElementById('retake_' + qIdx).disabled = true;
+
+        // Auto-start after short delay
+        setTimeout(() => startRecording(qIdx), 400);
+      }
+
+      function setStatus(qIdx, text, cls) {
+        const el = document.getElementById('status_' + qIdx);
+        if (!el) return;
+        el.textContent = text;
+        el.className = 'rec-status' + (cls ? ' ' + cls : '');
+      }
+
+      // ── Timer ────────────────────────────────────────────────────────
+      function startTimer(duration) {
+        let timerDisplay = document.getElementById("timer");
+        let timer = duration * 60;
+
+        let interval = setInterval(function () {
+          let minutes = Math.floor(timer / 60);
+          let seconds = timer % 60;
+          timerDisplay.textContent =
+            (minutes < 10 ? "0" : "") + minutes + ":" +
+            (seconds  < 10 ? "0" : "") + seconds;
+
+          if (--timer < 0) {
+            clearInterval(interval);
+            document.getElementById("test-form").submit();
+          }
+        }, 1000);
+      }
+
+      // ── Proctoring ───────────────────────────────────────────────────
+      let submitted = false;
+      document.addEventListener("visibilitychange", () => {
+        const form = document.getElementById("test-form");
+        if (document.visibilityState === "hidden" && !submitted && form) {
+          submitted = true;
+          form.submit();
+        }
+      });
+
+      // ── Main navigation logic ────────────────────────────────────────
+      window.onload = function () {
+        const form = document.getElementById("test-form");
+        if (!form) return;
+
+        const totalQuestions = parseInt(form.getAttribute("data-qcount"));
+        const duration       = parseInt(form.getAttribute("data-duration"));
+        const questionDivs   = document.querySelectorAll(".test-q");
+        const progressFill   = document.getElementById("progress-fill");
+        const prevBtn        = document.getElementById("prev-button");
+        const nextBtn        = document.getElementById("next-button");
+        const submitBtn      = document.getElementById("submit-button");
+
+        let currentIndex = 0;
+
+        function updateUI() {
+          questionDivs.forEach((q, i) => q.classList.toggle("current-q", i === currentIndex));
+
+          if (progressFill) {
+            progressFill.style.width = ((currentIndex + 1) / totalQuestions) * 100 + "%";
+          }
+
+          prevBtn.style.display = currentIndex > 0 ? "block" : "none";
+
+          if (currentIndex === totalQuestions - 1) {
+            nextBtn.style.display   = "none";
+            submitBtn.style.display = "block";
+          } else {
+            nextBtn.style.display   = "block";
+            submitBtn.style.display = "none";
+          }
+        }
+
+        function validateCurrentQuestion() {
+          const currentQ = document.getElementById("q-" + (currentIndex + 1));
+          if (!currentQ) return true;
+
+          const qType = currentQ.getAttribute("data-qtype");
+
+          // audio_text: require a recording OR typed text
+          if (qType === 'audio_text') {
+            const audioInput = currentQ.querySelector('input[type="hidden"]');
+            const textArea   = currentQ.querySelector('textarea[name$="_text"]');
+            const hasAudio   = audioInput && audioInput.value && audioInput.value.length > 10;
+            const hasText    = textArea && textArea.value.trim().length > 0;
+
+            if (!hasAudio && !hasText) {
+              alert("⚠️ Please record your answer (or type in the optional text box) before proceeding.");
+              return false;
+            }
+            return true;
+          }
+
+          // text
+          const textarea = currentQ.querySelector('textarea:not([name$="_text"])');
+          if (textarea && textarea.value.trim() === "") {
+            alert("⚠️ Please enter your answer before proceeding.");
+            return false;
+          }
+
+          // radio
+          const radios = currentQ.querySelectorAll('input[type="radio"]');
+          if (radios.length > 0 && ![...radios].some(r => r.checked)) {
+            alert("⚠️ Please select an option before proceeding.");
+            return false;
+          }
+
+          return true;
+        }
+
+        nextBtn.addEventListener("click", () => {
+          if (!validateCurrentQuestion()) return;
+          currentIndex++;
+          updateUI();
+        });
+
+        prevBtn.addEventListener("click", () => {
+          currentIndex--;
+          updateUI();
+        });
+
+        submitBtn.addEventListener("click", (e) => {
+          if (!validateCurrentQuestion()) { e.preventDefault(); return; }
+
+          // Stop any active recording before submit
+          Object.keys(recState).forEach(qIdx => {
+            const s = recState[qIdx];
+            if (s && s.recorder && s.recorder.state === 'recording') {
+              s.recorder.stop();
+            }
+          });
+
+          if (!confirm("Are you sure you want to submit your test? You cannot change answers after submission.")) {
+            e.preventDefault();
+          } else {
+            submitted = true;
+          }
+        });
+
+        updateUI();
+
+        if (duration > 0) {
+          startTimer(duration);
+        } else {
+          document.getElementById("timer").innerText = "∞";
+        }
+      };
+
+      // Clean up on unload
+      window.addEventListener('beforeunload', () => {
+        Object.keys(recState).forEach(qIdx => {
+          const s = recState[qIdx];
+          if (s && s.stream) s.stream.getTracks().forEach(t => t.stop());
+        });
+      });
+    </script>
+  </body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ test.title if test else 'Assessment' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <style>
+      body {
+        background: #f1f5f9;
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        color: #1e293b;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      .test-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+      }
+
+      .test-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      #timer-container {
+        background: #fee2e2;
+        padding: 8px 16px;
+        border-radius: 99px;
+        border: 1px solid #fecaca;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #timer {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #b91c1c;
+        font-family: monospace;
+      }
+
+      .test-q {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+
+      .current-q {
+        display: block;
+      }
+
+      .q-meta {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #2563eb;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .q-text {
+        font-size: 1.15rem;
+        font-weight: 500;
+        line-height: 1.6;
+        color: #1e293b;
+        margin-bottom: 25px;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
+      textarea:focus {
+        border-color: #2563eb;
+        outline: none;
+      }
+
+      .option-label {
+        display: block;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .option-label:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+
+      input[type="radio"]:checked + span {
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      input[type="radio"] {
+        margin-right: 12px;
+        transform: scale(1.2);
+      }
+
+      /* Highlight selected option */
+      .option-label:has(input[type="radio"]:checked) {
+        border-color: #2563eb;
+        background: #eff6ff;
+      }
+
+      .locked-q {
+        pointer-events: none;
+        opacity: 0.5;
+        filter: grayscale(1);
+      }
+
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .btn {
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        border: none;
+        transition: transform 0.1s, background 0.2s;
+      }
+
+      #prev-button { background: #64748b; color: white; }
+      #next-button { background: #2563eb; color: white; }
+      #next-button:hover { background: #1d4ed8; }
+      #submit-button { background: #16a34a; color: white; }
+      #submit-button:hover { background: #15803d; }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to   { opacity: 1; transform: translateY(0);   }
+      }
+
+      .progress-track {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #2563eb;
+        width: 0%;
+        transition: width 0.4s ease;
+      }
+
+      .error-message {
+        background: #fee2e2;
+        border-left: 4px solid #dc2626;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        color: #991b1b;
+      }
+
+      .audio-recording-wrap {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+      }
+
+      .audio-recording-wrap .rec-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .rec-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+
+      .rec-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .rec-btn-start  { background: #2563eb; color: white; }
+      .rec-btn-stop   { background: #ef4444; color: white; }
+      .rec-btn-retake { background: #64748b; color: white; }
+
+      .rec-status { font-weight: 600; font-size: 0.9rem; color: #64748b; margin-bottom: 10px; }
+      .rec-status.recording { color: #dc2626; }
+      .rec-status.done      { color: #16a34a; }
+
+      .debug-info { background: #f1f5f9; padding: 10px; margin-top: 20px; border-radius: 8px; font-family: monospace; font-size: 12px; display: none; }
+      .debug-info.show { display: block; }
+      .toggle-debug { position: fixed; bottom: 10px; right: 10px; background: #64748b; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; z-index: 1000; }
+      .toggle-debug:hover { background: #475569; }
+    </style>
+  </head>
+
+  <body>
+    <button class="toggle-debug" onclick="toggleDebug()">🐛 Debug Info</button>
+
+    <div class="container">
+      <div class="test-header">
+        <h2>{{ test.title if test else 'Technical Assessment' }}</h2>
+        <div id="timer-container">
+          <span style="font-size: 0.9rem; font-weight: bold; color: #b91c1c">⏱</span>
+          <span id="timer">--:--</span>
+        </div>
+      </div>
+
+      {% if not can_start %}
+      <div style="text-align: center; padding: 40px">
+        <h3 style="color: #ef4444">⏳ Test Not Yet Available</h3>
+        <p>{{ time_status }}</p>
+        <a href="{{ url_for('candidate_jobs') }}" class="btn"
+           style="background: #64748b; color: white; text-decoration: none; display: inline-block; margin-top: 20px;">
+          Return to Dashboard
+        </a>
+      </div>
+
+      {% elif test %}
+        {% if test.questions_json %}
+          {% set questions = test.questions_json | from_json %}
+          {% if questions and questions|length > 0 %}
+
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+
+          <form
+            id="test-form"
+            method="POST"
+            action="{{ url_for('candidate_submit_test', job_id=test.job_id) }}"
+            data-duration="{{ test.duration_minutes | default(0) }}"
+            data-qcount="{{ questions | length }}"
+          >
+            {# ─────────────────────────────────────────────────────────────────
+               KEY FIX: use loop.index0 (0-based) as the field name so that
+               q_0 always maps to questions[0], q_1 → questions[1], etc.
+               This matches the grade_test_ai() grader which looks for "q_{idx}"
+               where idx = the question's position in the JSON array.
+            ───────────────────────────────────────────────────────────────── #}
+            {% for q in questions %}
+              {# Save the 0-based index BEFORE entering any nested loop,
+                 so inner loops (options) don't shadow the outer loop variable. #}
+              {% set q_idx = loop.index0 %}
+              {% set q_num = loop.index %}
+              {% set q_total = questions | length %}
+
+              <div class="test-q" id="q-{{ q_num }}" data-qtype="{{ q.type }}">
+
+                <div class="q-meta">
+                  Question {{ q_num }} of {{ q_total }}
+                </div>
+                <div class="q-text">{{ q.q }}</div>
+
+                {# ── TEXT question ── #}
+                {% if q.type == 'text' %}
+                  <textarea
+                    name="q_{{ q_idx }}"
+                    rows="6"
+                    placeholder="Type your detailed answer here..."
+                  ></textarea>
+
+                {# ── AUDIO / SCENARIO question ── #}
+                {% elif q.type == 'audio_text' %}
+                  {# Hidden field stores base64 audio; name uses 0-based index #}
+                  <input
+                    type="hidden"
+                    id="audio_{{ q_idx }}"
+                    name="q_{{ q_idx }}"
+                    value=""
+                  />
+
+                  <div class="audio-recording-wrap">
+                    <div class="rec-buttons">
+                      <button type="button" class="rec-btn rec-btn-start"
+                              id="start_{{ q_idx }}"
+                              onclick="startRecording({{ q_idx }})">
+                        🎤 Start Recording
+                      </button>
+                      <button type="button" class="rec-btn rec-btn-stop"
+                              id="stop_{{ q_idx }}"
+                              onclick="stopRecording({{ q_idx }})"
+                              disabled>
+                        ⏹ Stop Recording
+                      </button>
+                      <button type="button" class="rec-btn rec-btn-retake"
+                              id="retake_{{ q_idx }}"
+                              onclick="retakeRecording({{ q_idx }})"
+                              disabled>
+                        🔄 Retake
+                      </button>
+                    </div>
+                    <div class="rec-status" id="status_{{ q_idx }}">
+                      ⏺ Click "Start Recording" to begin your answer
+                    </div>
+                    <audio id="playback_{{ q_idx }}" controls
+                           style="width:100%; display:none; margin-top:10px;"></audio>
+                  </div>
+
+                  {# Optional typed fallback — name uses q_idx too #}
+                  <textarea
+                    name="q_{{ q_idx }}_text"
+                    rows="3"
+                    placeholder="(Optional) You can also type your answer here..."
+                    style="margin-top: 5px;"
+                  ></textarea>
+
+                {# ── MCQ / RADIO question ── #}
+                {% elif q.type == 'radio' %}
+                  <div class="options-group">
+                    {# Inner loop over options — loop variable here is the OPTION loop,
+                       NOT the question loop. We use q_idx (captured above) for the
+                       radio name so it always points to the correct question in the
+                       JSON array regardless of display order. #}
+                    {% for option in q.options %}
+                      <label class="option-label">
+                        <input type="radio" name="q_{{ q_idx }}" value="{{ option }}" />
+                        <span>{{ option }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+
+                {# ── Unknown type fallback ── #}
+                {% else %}
+                  <div class="error-message">
+                    ⚠️ Unknown question type: {{ q.type }}
+                  </div>
+                  <textarea name="q_{{ q_idx }}" rows="4"
+                            placeholder="Type your answer here..."></textarea>
+                {% endif %}
+
+              </div>
+            {% endfor %}
+
+            <div class="nav-buttons">
+              <button type="button" id="prev-button" class="btn" style="display: none">
+                ← Previous
+              </button>
+              <button type="button" id="next-button" class="btn">
+                Next Question →
+              </button>
+              <button type="submit" id="submit-button" class="btn" style="display: none">
+                ✅ Submit Assessment
+              </button>
+            </div>
+          </form>
+
+          {% else %}
+          <div class="error-message">
+            <strong>⚠️ No questions found in the test!</strong><br />
+            The test has been created but no questions are available. Please contact the administrator.
+          </div>
+          <div class="debug-info show">
+            <strong>Debug Information:</strong><br />
+            Test ID: {{ test.id }}<br />
+            Job ID: {{ test.job_id }}<br />
+            Test Title: {{ test.title }}<br />
+            Questions JSON Raw:
+            <pre style="max-height: 200px; overflow: auto">{{ test.questions_json[:500] if test.questions_json else 'None' }}</pre>
+          </div>
+          {% endif %}
+
+        {% else %}
+        <div class="error-message">
+          <strong>⚠️ Test configuration error!</strong><br />
+          No questions JSON found for this test.
+        </div>
+        {% endif %}
+
+      {% else %}
+      <div class="error-message">
+        <strong>⚠️ Test not found!</strong><br />
+        The test you're trying to access doesn't exist.
+      </div>
+      {% endif %}
+    </div>
+
+    <script>
+      function toggleDebug() {
+        document.querySelectorAll(".debug-info").forEach(d => d.classList.toggle("show"));
+      }
+
+      // ── Audio recording state ────────────────────────────────────────
+      const recState = {};
+
+      async function startRecording(qIdx) {
+        try {
+          if (recState[qIdx]?.recorder?.state === 'recording') return;
+
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          recState[qIdx] = { recorder: null, chunks: [], stream, hasRecording: false };
+
+          const recorder = new MediaRecorder(stream);
+          recState[qIdx].recorder = recorder;
+
+          recorder.ondataavailable = e => {
+            if (e.data.size > 0) recState[qIdx].chunks.push(e.data);
+          };
+
+          recorder.onstop = () => {
+            const blob = new Blob(recState[qIdx].chunks, { type: 'audio/webm' });
+            const url  = URL.createObjectURL(blob);
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const hiddenInput = document.getElementById('audio_' + qIdx);
+              if (hiddenInput) hiddenInput.value = reader.result;
+            };
+            reader.readAsDataURL(blob);
+
+            const pb = document.getElementById('playback_' + qIdx);
+            if (pb) { pb.src = url; pb.style.display = 'block'; }
+
+            recState[qIdx].hasRecording = true;
+            recState[qIdx].stream.getTracks().forEach(t => t.stop());
+
+            setStatus(qIdx, '✅ Recording saved! You can play it back, retake, or proceed.', 'done');
+            document.getElementById('start_'  + qIdx).disabled = false;
+            document.getElementById('stop_'   + qIdx).disabled = true;
+            document.getElementById('retake_' + qIdx).disabled = false;
+          };
+
+          recorder.start();
+          setStatus(qIdx, '🔴 Recording… speak your answer now.', 'recording');
+          document.getElementById('start_'  + qIdx).disabled = true;
+          document.getElementById('stop_'   + qIdx).disabled = false;
+          document.getElementById('retake_' + qIdx).disabled = true;
+
+        } catch (err) {
+          console.error('Mic error:', err);
+          const msg = err.name === 'NotAllowedError'
+            ? '❌ Microphone permission denied. Please allow microphone access.'
+            : '❌ Could not access microphone: ' + err.message;
+          setStatus(qIdx, msg, '');
+        }
+      }
+
+      function stopRecording(qIdx) {
+        const s = recState[qIdx];
+        if (s?.recorder?.state === 'recording') s.recorder.stop();
+      }
+
+      function retakeRecording(qIdx) {
+        if (recState[qIdx]) {
+          if (recState[qIdx].recorder?.state === 'recording') recState[qIdx].recorder.stop();
+          recState[qIdx].hasRecording = false;
+          recState[qIdx].chunks = [];
+        }
+        const hiddenInput = document.getElementById('audio_' + qIdx);
+        if (hiddenInput) hiddenInput.value = '';
+
+        const pb = document.getElementById('playback_' + qIdx);
+        if (pb) { pb.src = ''; pb.style.display = 'none'; }
+
+        setStatus(qIdx, '🔄 Ready to record again. Click "Start Recording".', '');
+        document.getElementById('start_'  + qIdx).disabled = false;
+        document.getElementById('stop_'   + qIdx).disabled = true;
+        document.getElementById('retake_' + qIdx).disabled = true;
+        setTimeout(() => startRecording(qIdx), 400);
+      }
+
+      function setStatus(qIdx, text, cls) {
+        const el = document.getElementById('status_' + qIdx);
+        if (!el) return;
+        el.textContent = text;
+        el.className = 'rec-status' + (cls ? ' ' + cls : '');
+      }
+
+      // ── Timer ────────────────────────────────────────────────────────
+      function startTimer(duration) {
+        const display = document.getElementById("timer");
+        let remaining = duration * 60;
+        const interval = setInterval(() => {
+          const m = Math.floor(remaining / 60);
+          const s = remaining % 60;
+          display.textContent =
+            (m < 10 ? "0" : "") + m + ":" +
+            (s < 10 ? "0" : "") + s;
+          if (--remaining < 0) {
+            clearInterval(interval);
+            document.getElementById("test-form").submit();
+          }
+        }, 1000);
+      }
+
+      // ── Proctoring ───────────────────────────────────────────────────
+      let submitted = false;
+      document.addEventListener("visibilitychange", () => {
+        const form = document.getElementById("test-form");
+        if (document.visibilityState === "hidden" && !submitted && form) {
+          submitted = true;
+          form.submit();
+        }
+      });
+
+      // ── Navigation ───────────────────────────────────────────────────
+      window.onload = function () {
+        const form = document.getElementById("test-form");
+        if (!form) return;
+
+        const totalQuestions = parseInt(form.getAttribute("data-qcount"));
+        const duration       = parseInt(form.getAttribute("data-duration"));
+        const questionDivs   = document.querySelectorAll(".test-q");
+        const progressFill   = document.getElementById("progress-fill");
+        const prevBtn        = document.getElementById("prev-button");
+        const nextBtn        = document.getElementById("next-button");
+        const submitBtn      = document.getElementById("submit-button");
+
+        let currentIndex = 0;
+
+        function updateUI() {
+          questionDivs.forEach((q, i) => q.classList.toggle("current-q", i === currentIndex));
+          if (progressFill) {
+            progressFill.style.width = ((currentIndex + 1) / totalQuestions) * 100 + "%";
+          }
+          prevBtn.style.display   = currentIndex > 0 ? "block" : "none";
+          nextBtn.style.display   = currentIndex === totalQuestions - 1 ? "none"  : "block";
+          submitBtn.style.display = currentIndex === totalQuestions - 1 ? "block" : "none";
+        }
+
+        function validateCurrentQuestion() {
+          // q div IDs are 1-based (q-1, q-2…) to match display numbering
+          const currentQ = document.getElementById("q-" + (currentIndex + 1));
+          if (!currentQ) return true;
+
+          const qType = currentQ.getAttribute("data-qtype");
+
+          if (qType === 'audio_text') {
+            const audioInput = currentQ.querySelector('input[type="hidden"]');
+            const textArea   = currentQ.querySelector('textarea[name$="_text"]');
+            const hasAudio   = audioInput?.value?.length > 10;
+            const hasText    = textArea?.value?.trim().length > 0;
+            if (!hasAudio && !hasText) {
+              alert("⚠️ Please record your answer (or type in the optional text box) before proceeding.");
+              return false;
+            }
+            return true;
+          }
+
+          const textarea = currentQ.querySelector('textarea:not([name$="_text"])');
+          if (textarea && textarea.value.trim() === "") {
+            alert("⚠️ Please enter your answer before proceeding.");
+            return false;
+          }
+
+          const radios = currentQ.querySelectorAll('input[type="radio"]');
+          if (radios.length > 0 && ![...radios].some(r => r.checked)) {
+            alert("⚠️ Please select an option before proceeding.");
+            return false;
+          }
+
+          return true;
+        }
+
+        nextBtn.addEventListener("click", () => {
+          if (!validateCurrentQuestion()) return;
+          currentIndex++;
+          updateUI();
+        });
+
+        prevBtn.addEventListener("click", () => {
+          currentIndex--;
+          updateUI();
+        });
+
+        submitBtn.addEventListener("click", (e) => {
+          if (!validateCurrentQuestion()) { e.preventDefault(); return; }
+
+          Object.keys(recState).forEach(qIdx => {
+            if (recState[qIdx]?.recorder?.state === 'recording') {
+              recState[qIdx].recorder.stop();
+            }
+          });
+
+          if (!confirm("Are you sure you want to submit? You cannot change answers after submission.")) {
+            e.preventDefault();
+          } else {
+            submitted = true;
+          }
+        });
+
+        updateUI();
+        if (duration > 0) startTimer(duration);
+        else document.getElementById("timer").innerText = "∞";
+      };
+
+      window.addEventListener('beforeunload', () => {
+        Object.keys(recState).forEach(qIdx => {
+          recState[qIdx]?.stream?.getTracks().forEach(t => t.stop());
+        });
+      });
+    </script>
+  </body>
+</html>

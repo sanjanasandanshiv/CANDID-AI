@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Past Test Links | Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+      .page-header { margin-bottom: 28px; }
+      .page-header h2 {
+        color: var(--royal-blue);
+        display: flex; align-items: center; gap: 12px;
+        margin: 0 0 6px 0; font-size: 1.4rem;
+      }
+      .page-header p { color: #64748b; margin: 0; font-size: 0.9rem; }
+
+      .job-block {
+        background: #fff; border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        margin-bottom: 28px; overflow: hidden;
+      }
+      .job-block-header {
+        background: var(--royal-blue); color: #fff;
+        padding: 16px 24px;
+        display: flex; align-items: center;
+        justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      }
+      .job-block-header h3 {
+        margin: 0; font-size: 1.05rem;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .candidate-count-badge {
+        background: rgba(255,255,255,0.2); border-radius: 20px;
+        padding: 4px 14px; font-size: 0.82rem; font-weight: 600; white-space: nowrap;
+      }
+
+      .test-link-row {
+        padding: 14px 24px; background: #f8faff;
+        border-bottom: 1px solid #e8edf5;
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      }
+      .test-link-label {
+        font-size: 0.82rem; font-weight: 700; color: #475569;
+        text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+      }
+      .test-link-url {
+        font-size: 0.85rem; color: #1d4ed8;
+        background: #eff6ff; border: 1px solid #dbeafe;
+        border-radius: 7px; padding: 6px 12px;
+        flex: 1; word-break: break-all; font-family: monospace;
+      }
+      .btn-copy {
+        background: var(--royal-blue); color: #fff; border: none;
+        padding: 7px 16px; border-radius: 7px;
+        font-size: 0.82rem; font-weight: 600; cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        transition: background 0.2s; white-space: nowrap;
+      }
+      .btn-copy:hover  { background: #1a3a7a; }
+      .btn-copy.copied { background: #16a34a; }
+
+      .candidates-table-wrapper { padding: 20px 24px; }
+      .candidates-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+      .candidates-table thead tr { background: #f1f5f9; }
+      .candidates-table th {
+        padding: 10px 16px; text-align: left; font-weight: 700;
+        color: #475569; font-size: 0.8rem; text-transform: uppercase;
+        letter-spacing: 0.04em; border-bottom: 2px solid #e2e8f0;
+      }
+      .candidates-table td {
+        padding: 12px 16px; border-bottom: 1px solid #f1f5f9;
+        color: #334155; vertical-align: middle;
+      }
+      .candidates-table tbody tr:last-child td { border-bottom: none; }
+      .candidates-table tbody tr:hover td { background: #f8faff; }
+
+      .status-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+      }
+      .status-selected  { background: #fef3c7; color: #92400e; }
+      .status-completed { background: #dcfce7; color: #166534; }
+
+      .col-sr { width: 50px; text-align: center; color: #94a3b8; font-size: 0.82rem; }
+
+      .empty-state {
+        text-align: center; padding: 70px 20px; background: #fff;
+        border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      }
+      .empty-state i { font-size: 3rem; color: #cbd5e1; margin-bottom: 16px; }
+      .empty-state h3 { color: #475569; margin-bottom: 8px; }
+      .empty-state p  { color: #94a3b8; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body class="dashboard-body">
+
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <i class="fas fa-briefcase"></i> <span>HR Panel</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-square"></i> Create Job</a></li>
+        <li class="active"><a href="#"><i class="fas fa-history"></i> View Past Tests</a></li>
+        <li><a href="#"><i class="fas fa-users"></i> Applicants</a></li>
+        <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <p>© 2026 Admin Portal</p>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <header class="top-nav">
+        <div class="user-greeting"></div>
+        <div class="top-nav-actions">
+          <span class="admin-badge">Admin Mode</span>
+          <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+        </div>
+      </header>
+
+      <div class="container-fluid animate-slide-up">
+
+        <div class="page-header">
+          <h2><i class="fas fa-history"></i> Past Test Links</h2>
+          <p>All test links generated per job role, and the candidates who have taken or been invited to the test.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-{{ category }} animate-fade-in">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if jobs_map %}
+          {% for job_id, job in jobs_map.items() %}
+          <div class="job-block animate-slide-up">
+
+            <div class="job-block-header">
+              <h3><i class="fas fa-briefcase"></i> {{ job.job_title }}</h3>
+              <span class="candidate-count-badge">
+                <i class="fas fa-users"></i>
+                {{ job.candidates | length }} candidate{{ 's' if job.candidates | length != 1 else '' }}
+              </span>
+            </div>
+
+            <div class="test-link-row">
+              <span class="test-link-label"><i class="fas fa-link"></i> Test Link</span>
+              <span class="test-link-url" id="link-{{ job_id }}">{{ job.test_link }}</span>
+              <button class="btn-copy" onclick="copyLink('link-{{ job_id }}', this)">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+
+            <div class="candidates-table-wrapper">
+              <table class="candidates-table">
+                <thead>
+                  <tr>
+                    <th class="col-sr">#</th>
+                    <th><i class="fas fa-user" style="margin-right:6px;color:#94a3b8;"></i>Candidate Name</th>
+                    <th><i class="fas fa-tag" style="margin-right:6px;color:#94a3b8;"></i>Test Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for candidate in job.candidates %}
+                  <tr>
+                    <td class="col-sr">{{ loop.index }}</td>
+                    <td>{{ candidate.name }}</td>
+                    <td>
+                      {% if candidate.status == 'Test Completed' %}
+                        <span class="status-pill status-completed">
+                          <i class="fas fa-check-circle"></i> Test Completed
+                        </span>
+                      {% else %}
+                        <span class="status-pill status-selected">
+                          <i class="fas fa-hourglass-half"></i> Selected for Test
+                        </span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+          {% endfor %}
+
+        {% else %}
+          <div class="empty-state animate-fade-in">
+            <i class="fas fa-inbox"></i>
+            <h3>No Past Tests Found</h3>
+            <p>No test links have been sent to any candidates yet. Generate an AI test and send links from the dashboard.</p>
+          </div>
+        {% endif %}
+
+      </div>
+    </main>
+
+    <script>
+      function copyLink(spanId, btn) {
+        const text = document.getElementById(spanId).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          const original = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = original;
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      }
+    </script>
+
+  </body>
+</html>

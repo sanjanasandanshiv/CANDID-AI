@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Analysis | Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s;
+        }
+        .summary-card:hover { transform: translateY(-3px); }
+        .summary-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; flex-shrink: 0;
+        }
+        .icon-blue   { background: #dbeafe; color: #2563eb; }
+        .icon-green  { background: #dcfce7; color: #16a34a; }
+        .icon-amber  { background: #fef9c3; color: #ca8a04; }
+        .icon-purple { background: #ede9fe; color: #7c3aed; }
+        .summary-info .val {
+            display: block;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1.1;
+        }
+        .summary-info .lbl {
+            display: block;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .chart-card.full-width { grid-column: 1 / -1; }
+        .chart-header { margin-bottom: 20px; }
+        .chart-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 4px 0;
+        }
+        .chart-header p { font-size: 0.8rem; color: #64748b; margin: 0; }
+        .chart-wrap-donut { max-width: 300px; margin: 0 auto; }
+        @media (max-width: 768px) {
+            .charts-row { grid-template-columns: 1fr; }
+            .chart-card.full-width { grid-column: 1; }
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li><a href="{{ url_for('hr_all_applicants') }}"><i class="fas fa-users"></i> All Applicants</a></li>
+            <li class="active"><a href="#"><i class="fas fa-chart-bar"></i> View Analysis</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <i class="fas fa-chart-bar"></i> <strong>Recruitment Analysis</strong>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back</a>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+
+            <!-- 4 Summary Cards -->
+            <section class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-icon icon-blue"><i class="fas fa-users"></i></div>
+                    <div class="summary-info">
+                        <span class="val">{{ total_applicants }}</span>
+                        <span class="lbl">Total Applicants</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon icon-green"><i class="fas fa-check-circle"></i></div>
+                    <div class="summary-info">
+                        <span class="val">{{ test_completed }}</span>
+                        <span class="lbl">Test Completed</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon icon-amber"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="summary-info">
+                        <span class="val">{{ selected_for_test }}</span>
+                        <span class="lbl">Selected for Test</span>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon icon-purple"><i class="fas fa-file-alt"></i></div>
+                    <div class="summary-info">
+                        <span class="val">{{ just_applied }}</span>
+                        <span class="lbl">Applied (Pending Review)</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Row 1: Donut + Horizontal Bar -->
+            <div class="charts-row">
+
+                <!-- Chart 1: Donut - Applicant Status -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie" style="color:#6366f1;margin-right:6px;"></i>Applicant Status Breakdown</h3>
+                        <p>Current recruitment stage of every candidate</p>
+                    </div>
+                    <div class="chart-wrap-donut">
+                        <canvas id="statusDonut"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Horizontal Bar - Job Role Popularity -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-briefcase" style="color:#10b981;margin-right:6px;"></i>Most Applied Job Roles</h3>
+                        <p>Which job postings are attracting the most candidates</p>
+                    </div>
+                    <canvas id="jobBar"></canvas>
+                </div>
+
+            </div>
+
+            <!-- Row 2: Score Distribution full width -->
+            <div class="charts-row">
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-graduation-cap" style="color:#f59e0b;margin-right:6px;"></i>Score Distribution of Test Takers</h3>
+                        <p>How many candidates scored in each range — red (low) to green (high)</p>
+                    </div>
+                    <canvas id="scoreBar" height="90"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Data from Flask
+        const statusLabels = {{ status_labels | safe }};
+        const statusCounts = {{ status_counts | safe }};
+        const jobLabels    = {{ job_labels    | safe }};
+        const jobCounts    = {{ job_counts    | safe }};
+        const scoreLabels  = {{ score_labels  | safe }};
+        const scoreCounts  = {{ score_counts  | safe }};
+
+        // Chart 1: Donut — Applicant Status Breakdown
+        new Chart(document.getElementById('statusDonut'), {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 14, font: { size: 12 }, boxWidth: 13 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct   = ((ctx.parsed / total) * 100).toFixed(1);
+                                return '  ' + ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Chart 2: Horizontal Bar — Job Role Popularity
+        new Chart(document.getElementById('jobBar'), {
+            type: 'bar',
+            data: {
+                labels: jobLabels,
+                datasets: [{
+                    label: 'Applicants',
+                    data: jobCounts,
+                    backgroundColor: '#10b981',
+                    hoverBackgroundColor: '#059669',
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => '  ' + ctx.parsed.x + ' applicant' + (ctx.parsed.x !== 1 ? 's' : '')
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { precision: 0, font: { size: 12 } },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { font: { size: 12 } }
+                    }
+                }
+            }
+        });
+
+        // Chart 3: Vertical Bar — Score Distribution
+        new Chart(document.getElementById('scoreBar'), {
+            type: 'bar',
+            data: {
+                labels: scoreLabels,
+                datasets: [{
+                    label: 'Candidates',
+                    data: scoreCounts,
+                    backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6'],
+                    borderRadius: 10,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => '  ' + ctx.parsed.y + ' candidate' + (ctx.parsed.y !== 1 ? 's' : '')
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Score Range (%)',
+                            font: { size: 12, weight: '600' },
+                            color: '#475569'
+                        },
+                        ticks: { font: { size: 13 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0, font: { size: 12 } },
+                        grid: { color: '#f1f5f9' },
+                        title: {
+                            display: true,
+                            text: 'Number of Candidates',
+                            font: { size: 12, weight: '600' },
+                            color: '#475569'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

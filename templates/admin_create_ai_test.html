@@ -1,0 +1,826 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create AI Test – {{ job.title }} | RecruitHQ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Styles for AI Generator */
+        .gen-container { max-width: 850px; margin: 0 auto; padding: 20px; }
+        
+        .ai-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 5px solid var(--royal-blue);
+            margin-bottom: 30px;
+        }
+
+        .form-section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #64748b;
+            font-weight: 800;
+            margin: 30px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section-title:first-child { margin-top: 0; }
+        .form-section-title i { color: var(--royal-blue); }
+
+        /* Assessment Type Selection */
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .type-card {
+            border: 2px solid #f1f5f9;
+            border-radius: 15px;
+            padding: 25px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+            position: relative;
+        }
+
+        .type-card:hover { 
+            border-color: var(--royal-blue); 
+            transform: translateY(-5px);
+            background: #f8fafc;
+        }
+        
+        .type-card.selected {
+            border-color: var(--royal-blue);
+            background: #eff6ff;
+            box-shadow: 0 10px 20px rgba(0,35,102,0.1);
+        }
+
+        .type-card.selected::after {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--royal-blue);
+        }
+
+        .type-card input[type=radio] { display: none; }
+        .type-card .icon { font-size: 2.2rem; margin-bottom: 12px; display: block; }
+        .type-card .name { font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px; }
+        .type-card .desc { font-size: 0.75rem; color: #64748b; line-height: 1.4; }
+
+        /* Special Logic for Soft Skills */
+        .type-card.soft.selected {
+            border-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+        .type-card.soft.selected .name { color: #5b21b6; }
+
+        .softskills-note {
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 0.85rem;
+            color: #5b21b6;
+            margin-bottom: 25px;
+            display: none;
+            border-left: 5px solid #8b5cf6;
+        }
+        .softskills-note.show { display: block; animation: slideInRight 0.4s ease; }
+
+        /* Form Controls */
+        .field-group { margin-bottom: 20px; }
+        .field-group label { display: block; font-weight: 600; color: #334155; margin-bottom: 8px; font-size: 0.9rem; }
+        .field-group input, .field-group textarea {
+            width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; transition: var(--transition);
+        }
+        .field-group input:focus, .field-group textarea:focus {
+            outline: none; border-color: var(--royal-blue); box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* Test Link Success State */
+        .test-link-container {
+            margin-top: 10px;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            border: 2px solid #10b981;
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.1);
+            display: none;
+        }
+        .test-link-container.show { display: block; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        .test-link-box {
+            display: flex;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin: 20px 0;
+            align-items: center;
+        }
+
+        .test-link-box input {
+            border: none; padding: 10px; flex-grow: 1; font-family: 'JetBrains Mono', monospace; background: transparent; font-size: 0.9rem; color: #0f172a;
+        }
+
+        .copy-btn {
+            background: var(--royal-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: var(--transition);
+        }
+        .copy-btn.copied { background: #059669; }
+
+        .btn-action {
+            flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: var(--transition);
+        }
+        .btn-send { background: #10b981; color: white; }
+        .btn-preview { background: #f1f5f9; color: #475569; }
+        .btn-send:hover { background: #059669; transform: translateY(-2px); }
+
+        .status-box {
+            margin-top: 15px; padding: 15px; border-radius: 10px; font-size: 0.85rem; display: none; border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-robot"></i> <span>RecruitHQ</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="active"><a href="#"><i class="fas fa-bolt"></i> Test Generator</a></li>
+            <li><a href="#"><i class="fas fa-history"></i> Past Tests</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Admin Portal</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back-link">
+                    <i class="fas fa-chevron-left"></i> Exit to Dashboard
+                </a>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-badge"><i class="fas fa-shield-alt"></i> {{ session.get('username', 'Admin') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            </div>
+        </header>
+
+        <div class="gen-container">
+            <div class="animate-slide-up">
+                <h2 style="margin-bottom: 8px; display: flex; align-items: center; gap: 15px;">
+                    <span style="background: var(--royal-blue); color:white; padding: 10px; border-radius: 12px;"><i class="fas fa-brain"></i></span>
+                    Groq AI Test Dispatcher
+                </h2>
+                <p style="color:#64748b; margin-bottom: 30px; font-size: 1.1rem;">
+                    Configuring assessment for: <strong style="color:var(--royal-blue)">{{ job.title }}</strong>
+                </p>
+            </div>
+
+            <div class="ai-card animate-slide-up">
+                <form method="POST" id="ai-test-form" action="{{ url_for('admin_create_ai_test', job_id=job_id) }}">
+                    
+                    <div class="form-section-title"><i class="fas fa-info-circle"></i> Identity & Scope</div>
+                    <div class="field-group">
+                        <label>Test Name</label>
+                        <input type="text" name="test_name" required placeholder="e.g. {{ job.title }} Technical Assessment">
+                    </div>
+
+                    <div class="field-group">
+                        <label>Target Skills & Context</label>
+                        <textarea name="domain_text" rows="3" required placeholder="List the primary skills AI should focus on (e.g. React, Node.js, System Design)..."></textarea>
+                    </div>
+
+                    <div class="form-section-title"><i class="fas fa-layer-group"></i> Choose Interview Mode</div>
+                    <div class="type-grid">
+                        <label class="type-card" onclick="selectType('radio', this)">
+                            <input type="radio" name="question_type" value="radio" checked>
+                            <span class="icon">📝</span>
+                            <span class="name">Quick MCQ</span>
+                            <span class="desc">Standard technical screening</span>
+                        </label>
+
+                        <label class="type-card" onclick="selectType('audio_text', this)">
+                            <input type="radio" name="question_type" value="audio_text">
+                            <span class="icon">✍️</span>
+                            <span class="name">Scenario Based</span>
+                            <span class="desc">Long-form problem solving</span>
+                        </label>
+
+                        <label class="type-card soft" onclick="selectType('softskills', this)">
+                            <input type="radio" name="question_type" value="softskills">
+                            <span class="icon">🎤</span>
+                            <span class="name">Soft Skills</span>
+                            <span class="desc">AI Spoken Voice Interview</span>
+                        </label>
+                    </div>
+
+                    <div class="softskills-note" id="ss-note">
+                        <i class="fas fa-wand-magic-sparkles"></i> <strong>Pro Tip:</strong> This mode uses AssemblyAI for real-time transcription. Candidates will be interviewed by an AI voice.
+                    </div>
+
+                    <div class="form-section-title"><i class="fas fa-clock"></i> Parameters</div>
+                    <div class="grid-2">
+                        <div class="field-group">
+                            <label>Question Count</label>
+                            <input type="number" name="num_questions" value="5" min="1" max="15">
+                        </div>
+                        <div class="field-group">
+                            <label>Duration (Minutes)</label>
+                            <input type="number" name="duration" value="30" min="5">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Scheduled Start Time</label>
+                        <input type="datetime-local" name="start_datetime" required id="startDateTime">
+                    </div>
+
+                    <button type="submit" class="btn-submit-job" id="submit-btn" style="width:100%; margin-top:15px;">
+                        <i class="fas fa-bolt"></i> Generate AI Assessment
+                    </button>
+                </form>
+            </div>
+
+            <div id="testLinkContainer" class="test-link-container {% if test_link %}show{% endif %}">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 3rem; color: #10b981;"><i class="fas fa-check-circle"></i></div>
+                    <h3 style="margin: 10px 0 5px 0;">Test Link Generated!</h3>
+                    <p style="color: #64748b; font-size: 0.9rem;">The AI has successfully created the questions based on your criteria.</p>
+                </div>
+                
+                <div class="test-link-box">
+                    <input type="text" id="testLinkInput" value="{{ test_link if test_link else '' }}" readonly>
+                    <button class="copy-btn" onclick="copyTestLink()" id="copyBtn">Copy Link</button>
+                </div>
+                
+                {% if test_link %}
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1e293b;">Distribute Assessment</h4>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-action btn-send" onclick="sendTestToAllSelected({{ job_id }})" id="sendAllBtn">
+                            <i class="fas fa-paper-plane"></i> Email All Selected
+                        </button>
+                        <button class="btn-action btn-preview" onclick="previewSelectedCandidates({{ job_id }})" id="previewBtn">
+                            <i class="fas fa-list-ul"></i> View Candidates
+                        </button>
+                    </div>
+                    <div id="sendAllStatus" class="status-box"></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const cards = document.querySelectorAll('.type-card');
+
+        function selectType(type, clicked) {
+            cards.forEach(c => c.classList.remove('selected'));
+            clicked.classList.add('selected');
+            clicked.querySelector('input[type=radio]').checked = true;
+
+            const isSS = type === 'softskills';
+            const ssNote = document.getElementById('ss-note');
+            if (ssNote) isSS ? ssNote.classList.add('show') : ssNote.classList.remove('show');
+
+            const btn = document.getElementById('submit-btn');
+            if (isSS) {
+                btn.innerHTML = '<i class="fas fa-microphone"></i> Generate Voice Interview';
+                btn.style.background = '#8b5cf6';
+            } else {
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Generate AI Assessment';
+                btn.style.background = 'var(--royal-blue)';
+            }
+        }
+
+        function copyTestLink() {
+            const linkInput = document.getElementById('testLinkInput');
+            const copyBtn = document.getElementById('copyBtn');
+            linkInput.select();
+            document.execCommand('copy');
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Link';
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }
+
+        function sendTestToAllSelected(jobId) {
+            if (!confirm('This will send the assessment link to all shortlisted candidates. Proceed?')) return;
+            const btn = document.getElementById('sendAllBtn');
+            const status = document.getElementById('sendAllStatus');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Dispatching...';
+            
+            // Logic for fetch remains same as your original
+            status.style.display = 'block';
+            status.innerHTML = '<i class="fas fa-info-circle"></i> Connecting to mail server...';
+            
+            // Simulated Success for UI preview
+            setTimeout(() => {
+                status.style.background = '#dcfce7';
+                status.style.color = '#166534';
+                status.innerHTML = '✅ Emails sent successfully to all shortlisted candidates.';
+                btn.innerHTML = '<i class="fas fa-check"></i> Emails Sent';
+            }, 2000);
+        }
+
+        // Set min date for scheduling
+        document.addEventListener('DOMContentLoaded', () => {
+            const dtInput = document.getElementById('startDateTime');
+            if (dtInput) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                dtInput.min = now.toISOString().slice(0, 16);
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create AI Test – {{ job.title }} | RecruitHQ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Styles for AI Generator */
+        .gen-container { max-width: 850px; margin: 0 auto; padding: 20px; }
+        
+        .ai-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-top: 5px solid var(--royal-blue);
+            margin-bottom: 30px;
+        }
+
+        .form-section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #64748b;
+            font-weight: 800;
+            margin: 30px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section-title:first-child { margin-top: 0; }
+        .form-section-title i { color: var(--royal-blue); }
+
+        /* Assessment Type Selection */
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .type-card {
+            border: 2px solid #f1f5f9;
+            border-radius: 15px;
+            padding: 25px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+            position: relative;
+        }
+
+        .type-card:hover { 
+            border-color: var(--royal-blue); 
+            transform: translateY(-5px);
+            background: #f8fafc;
+        }
+        
+        .type-card.selected {
+            border-color: var(--royal-blue);
+            background: #eff6ff;
+            box-shadow: 0 10px 20px rgba(0,35,102,0.1);
+        }
+
+        .type-card.selected::after {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--royal-blue);
+        }
+
+        .type-card input[type=radio] { display: none; }
+        .type-card .icon { font-size: 2.2rem; margin-bottom: 12px; display: block; }
+        .type-card .name { font-weight: 700; color: #1e293b; display: block; margin-bottom: 4px; }
+        .type-card .desc { font-size: 0.75rem; color: #64748b; line-height: 1.4; }
+
+        /* Special Logic for Soft Skills */
+        .type-card.soft.selected {
+            border-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+        .type-card.soft.selected .name { color: #5b21b6; }
+
+        .softskills-note {
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 0.85rem;
+            color: #5b21b6;
+            margin-bottom: 25px;
+            display: none;
+            border-left: 5px solid #8b5cf6;
+        }
+        .softskills-note.show { display: block; animation: slideInRight 0.4s ease; }
+
+        /* Form Controls */
+        .field-group { margin-bottom: 20px; }
+        .field-group label { display: block; font-weight: 600; color: #334155; margin-bottom: 8px; font-size: 0.9rem; }
+        .field-group input, .field-group textarea {
+            width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; transition: var(--transition);
+        }
+        .field-group input:focus, .field-group textarea:focus {
+            outline: none; border-color: var(--royal-blue); box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* Test Link Success State */
+        .test-link-container {
+            margin-top: 10px;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            border: 2px solid #10b981;
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.1);
+            display: none;
+        }
+        .test-link-container.show { display: block; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        .test-link-box {
+            display: flex;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin: 20px 0;
+            align-items: center;
+        }
+
+        .test-link-box input {
+            border: none; padding: 10px; flex-grow: 1; font-family: 'JetBrains Mono', monospace; background: transparent; font-size: 0.9rem; color: #0f172a;
+        }
+
+        .copy-btn {
+            background: var(--royal-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: var(--transition);
+        }
+        .copy-btn.copied { background: #059669; }
+
+        .btn-action {
+            flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: var(--transition);
+        }
+        .btn-send { background: #10b981; color: white; }
+        .btn-preview { background: #f1f5f9; color: #475569; }
+        .btn-send:hover { background: #059669; transform: translateY(-2px); }
+
+        .status-box {
+            margin-top: 15px; padding: 15px; border-radius: 10px; font-size: 0.85rem; display: none; border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-robot"></i> <span>RecruitHQ</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="active"><a href="#"><i class="fas fa-bolt"></i> Test Generator</a></li>
+            <li><a href="#"><i class="fas fa-history"></i> Past Tests</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Admin Portal</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back-link">
+                    <i class="fas fa-chevron-left"></i> Exit to Dashboard
+                </a>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-badge"><i class="fas fa-shield-alt"></i> {{ session.get('username', 'Admin') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            </div>
+        </header>
+
+        <div class="gen-container">
+            <div class="animate-slide-up">
+                <h2 style="margin-bottom: 8px; display: flex; align-items: center; gap: 15px;">
+                    <span style="background: var(--royal-blue); color:white; padding: 10px; border-radius: 12px;"><i class="fas fa-brain"></i></span>
+                    Groq AI Test Dispatcher
+                </h2>
+                <p style="color:#64748b; margin-bottom: 30px; font-size: 1.1rem;">
+                    Configuring assessment for: <strong style="color:var(--royal-blue)">{{ job.title }}</strong>
+                </p>
+            </div>
+
+            <div class="ai-card animate-slide-up">
+                <form method="POST" id="ai-test-form" action="{{ url_for('admin_create_ai_test', job_id=job_id) }}">
+                    
+                    <div class="form-section-title"><i class="fas fa-info-circle"></i> Identity & Scope</div>
+                    <div class="field-group">
+                        <label>Test Name</label>
+                        <input type="text" name="test_name" required placeholder="e.g. {{ job.title }} Technical Assessment">
+                    </div>
+
+                    <div class="field-group">
+                        <label>Target Skills & Context</label>
+                        <textarea name="domain_text" rows="3" required placeholder="List the primary skills AI should focus on (e.g. React, Node.js, System Design)..."></textarea>
+                    </div>
+
+                    <div class="form-section-title"><i class="fas fa-layer-group"></i> Choose Interview Mode</div>
+                    <div class="type-grid">
+                        <label class="type-card" onclick="selectType('radio', this)">
+                            <input type="radio" name="question_type" value="radio" checked>
+                            <span class="icon">📝</span>
+                            <span class="name">Quick MCQ</span>
+                            <span class="desc">Standard technical screening</span>
+                        </label>
+
+                        <label class="type-card" onclick="selectType('audio_text', this)">
+                            <input type="radio" name="question_type" value="audio_text">
+                            <span class="icon">✍️</span>
+                            <span class="name">Scenario Based</span>
+                            <span class="desc">Long-form problem solving</span>
+                        </label>
+
+                        <label class="type-card soft" onclick="selectType('softskills', this)">
+                            <input type="radio" name="question_type" value="softskills">
+                            <span class="icon">🎤</span>
+                            <span class="name">Soft Skills</span>
+                            <span class="desc">AI Spoken Voice Interview</span>
+                        </label>
+                    </div>
+
+                    <div class="softskills-note" id="ss-note">
+                        <i class="fas fa-wand-magic-sparkles"></i> <strong>Pro Tip:</strong> This mode uses AssemblyAI for real-time transcription. Candidates will be interviewed by an AI voice.
+                    </div>
+
+                    <div class="form-section-title"><i class="fas fa-clock"></i> Parameters</div>
+                    <div class="grid-2">
+                        <div class="field-group">
+                            <label>Question Count</label>
+                            <input type="number" name="num_questions" value="5" min="1" max="15">
+                        </div>
+                        <div class="field-group">
+                            <label>Duration (Minutes)</label>
+                            <input type="number" name="duration" value="30" min="5">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Scheduled Start Time</label>
+                        <input type="datetime-local" name="start_datetime" required id="startDateTime">
+                    </div>
+
+                    <button type="submit" class="btn-submit-job" id="submit-btn" style="width:100%; margin-top:15px;">
+                        <i class="fas fa-bolt"></i> Generate AI Assessment
+                    </button>
+                </form>
+            </div>
+
+            <div id="testLinkContainer" class="test-link-container {% if test_link %}show{% endif %}">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 3rem; color: #10b981;"><i class="fas fa-check-circle"></i></div>
+                    <h3 style="margin: 10px 0 5px 0;">Test Link Generated!</h3>
+                    <p style="color: #64748b; font-size: 0.9rem;">The AI has successfully created the questions based on your criteria.</p>
+                </div>
+                
+                <div class="test-link-box">
+                    <input type="text" id="testLinkInput" value="{{ test_link if test_link else '' }}" readonly>
+                    <button class="copy-btn" onclick="copyTestLink()" id="copyBtn">Copy Link</button>
+                </div>
+                
+                {% if test_link %}
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #1e293b;">Distribute Assessment</h4>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-action btn-send" onclick="sendTestToAllSelected({{ job_id }})" id="sendAllBtn">
+                            <i class="fas fa-paper-plane"></i> Email All Selected
+                        </button>
+                        <button class="btn-action btn-preview" onclick="previewSelectedCandidates({{ job_id }})" id="previewBtn">
+                            <i class="fas fa-list-ul"></i> View Candidates
+                        </button>
+                    </div>
+                    <div id="sendAllStatus" class="status-box"></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const cards = document.querySelectorAll('.type-card');
+
+        function selectType(type, clicked) {
+            cards.forEach(c => c.classList.remove('selected'));
+            clicked.classList.add('selected');
+            clicked.querySelector('input[type=radio]').checked = true;
+
+            const isSS = type === 'softskills';
+            const ssNote = document.getElementById('ss-note');
+            if (ssNote) isSS ? ssNote.classList.add('show') : ssNote.classList.remove('show');
+
+            const btn = document.getElementById('submit-btn');
+            if (isSS) {
+                btn.innerHTML = '<i class="fas fa-microphone"></i> Generate Voice Interview';
+                btn.style.background = '#8b5cf6';
+            } else {
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Generate AI Assessment';
+                btn.style.background = 'var(--royal-blue)';
+            }
+        }
+
+        function copyTestLink() {
+            const linkInput = document.getElementById('testLinkInput');
+            const copyBtn = document.getElementById('copyBtn');
+            linkInput.select();
+            document.execCommand('copy');
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Link';
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }
+
+        function sendTestToAllSelected(jobId) {
+            if (!confirm('This will send the assessment link to all shortlisted candidates. Proceed?')) return;
+
+            const btn = document.getElementById('sendAllBtn');
+            const status = document.getElementById('sendAllStatus');
+            const testLink = document.getElementById('testLinkInput').value;
+
+            if (!testLink) {
+                alert('No test link found. Please generate the test first.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Dispatching...';
+            status.style.display = 'block';
+            status.style.background = '#eff6ff';
+            status.style.color = '#1e40af';
+            status.innerHTML = '<i class="fas fa-info-circle"></i> Connecting to mail server...';
+
+            fetch(`/admin/send_test_to_selected/${jobId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ test_link: testLink })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    status.style.background = '#dcfce7';
+                    status.style.color = '#166534';
+                    status.innerHTML = `✅ ${data.message}`;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Emails Sent';
+                } else {
+                    status.style.background = '#fef2f2';
+                    status.style.color = '#991b1b';
+                    status.innerHTML = `❌ ${data.message}`;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Email All Selected';
+                }
+            })
+            .catch(err => {
+                status.style.background = '#fef2f2';
+                status.style.color = '#991b1b';
+                status.innerHTML = `❌ Network error: ${err.message}`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Email All Selected';
+            });
+        }
+
+        // Set min date for scheduling
+        document.addEventListener('DOMContentLoaded', () => {
+            const dtInput = document.getElementById('startDateTime');
+            if (dtInput) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                dtInput.min = now.toISOString().slice(0, 16);
+            }
+        });
+    </script>
+</body>
+</html>

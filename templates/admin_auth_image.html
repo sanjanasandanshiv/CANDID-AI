@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Profile | Admin View</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Profile Specific UI Improvements */
+        .profile-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            border-top: 6px solid var(--royal-blue);
+            text-align: center;
+            padding-bottom: 30px;
+        }
+
+        .profile-header {
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .profile-header h2 {
+            margin: 0;
+            color: var(--royal-blue);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .image-container {
+            position: relative;
+            margin: 30px auto;
+            width: 300px;
+            height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,35,102,0.15);
+            background: #eee;
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .profile-img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Animated Scan Effect */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 86, 179, 0.5);
+            box-shadow: 0 0 15px var(--electric-blue);
+            animation: scan 3s linear infinite;
+            z-index: 2;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .no-image-box {
+            padding: 50px 20px;
+            color: #dc3545;
+            background: #fff5f5;
+            margin: 20px;
+            border-radius: 12px;
+            border: 1px dashed #feb2b2;
+        }
+
+        .back-nav {
+            margin-top: 20px;
+        }
+
+        .btn-back {
+            color: var(--royal-blue);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--transition);
+        }
+
+        .btn-back:hover {
+            gap: 10px;
+            color: var(--electric-blue);
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li class="active"><a href="#"><i class="fas fa-users"></i> Applicant Profile</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                Viewing <strong>Candidate Document</strong>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-name"><i class="fas fa-user-circle"></i> {{ session.get('username', 'Admin') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="profile-wrapper">
+            <div class="profile-card animate-slide-up">
+                <div class="profile-header">
+                    <h2><i class="fas fa-id-badge"></i> Profile Verification</h2>
+                </div>
+
+                {% if image_path %}
+                    <div class="image-container">
+                        <div class="scan-line"></div>
+                        <img src="{{ url_for('uploaded_file', filename=image_path) }}" alt="Candidate Profile Image" class="profile-img">
+                    </div>
+                    <div class="status-msg animate-fade-in">
+                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                        <span>Identity verification image uploaded.</span>
+                    </div>
+                {% else %}
+                    <div class="no-image-box animate-fade-in">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <p>No profile image found for this candidate.</p>
+                    </div>
+                {% endif %}
+
+                <div class="back-nav">
+                    <a href="javascript:history.back()" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Return to Applicant List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>All Applicants</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h2>All Applicants</h2>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Job Role</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Applied At</th>
+            <th>Test Submitted At</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for a in applicants %}
+        <tr>
+            <td>{{ a['name'] }}</td>
+            <td>{{ a['email'] }}</td>
+            <td>{{ a['job_role'] }}</td>
+            <td>{{ a['status'] }}</td>
+
+            <td>
+                {% if a['score'] %}
+                    {{ a['score'] }}%
+                {% else %}
+                    Not Attempted
+                {% endif %}
+            </td>
+
+            <td>{{ a['applied_at'] or 'N/A' }}</td>
+
+            <td>
+                {% if a['test_submitted_at'] %}
+                    {{ a['test_submitted_at'] }}
+                {% else %}
+                    Not Submitted
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Applicants | Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .modern-table th {
+            text-align: left;
+            padding: 16px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 2px solid #f1f5f9;
+            white-space: nowrap;
+        }
+
+        .modern-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f8fafc;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        .modern-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .name-cell { display: flex; flex-direction: column; }
+        .c-name { font-weight: 700; color: var(--text-dark); font-size: 0.95rem; }
+        .c-email { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+        .pill { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+        .pill-completed  { background: #dcfce7; color: #166534; }
+        .pill-selected   { background: #dbeafe; color: #1e40af; }
+        .pill-applied    { background: #f1f5f9; color: #475569; }
+        .pill-rejected   { background: #fee2e2; color: #991b1b; }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 380px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .filter-group select {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            background: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .count-badge {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .empty-state-new {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-new i { margin-bottom: 16px; color: #cbd5e1; }
+        .empty-state-new h3 { margin: 0 0 8px; color: var(--text-dark); }
+
+        .no-test { color: #94a3b8; font-style: italic; font-size: 0.85rem; }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>AdminPanel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li class="active"><a href="#"><i class="fas fa-users"></i> All Applicants</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <i class="fas fa-users"></i> <strong>All Applicants</strong>
+                <span class="count-badge" style="margin-left:10px;">{{ applicants | length }} total</span>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back</a>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% if applicants %}
+
+            <div class="table-controls animate-slide-up">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="applicantSearch" placeholder="Search by name, email or job..." onkeyup="filterApplicants()">
+                </div>
+                <div class="filter-group">
+                    <span>Filter:</span>
+                    <select id="statusFilter" onchange="filterApplicants()">
+                        <option value="">All Statuses</option>
+                        <option value="Test Completed">Test Completed</option>
+                        <option value="Selected for Test">Selected for Test</option>
+                        <option value="Applied">Applied</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container animate-slide-up">
+                <table class="modern-table" id="applicantsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Candidate</th>
+                            <th>Job Applied For</th>
+                            <th>Applied Date</th>
+                            <th>Test Status</th>
+                            <th>Score</th>
+                            <th>Test Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in applicants %}
+                        <tr>
+                            <td style="color:#94a3b8;font-weight:700;">{{ loop.index }}</td>
+                            <td>
+                                <div class="name-cell">
+                                    <span class="c-name">{{ a.name }}</span>
+                                    <span class="c-email">{{ a.email }}</span>
+                                </div>
+                            </td>
+                            <td>{{ a.job_role }}</td>
+                            <td>{{ a.applied_date.split('.')[0] if a.applied_date else '—' }}</td>
+                            <td>
+                                {% if a.status == 'Test Completed' %}
+                                    <span class="pill pill-completed">✓ Test Completed</span>
+                                {% elif a.status == 'Selected for Test' %}
+                                    <span class="pill pill-selected">⏳ Selected for Test</span>
+                                {% elif a.status == 'Rejected' %}
+                                    <span class="pill pill-rejected">✗ Rejected</span>
+                                {% else %}
+                                    <span class="pill pill-applied">Applied</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if a.score is not none %}
+                                    <strong style="color:{% if a.score >= 70 %}#10b981{% elif a.score >= 50 %}#f59e0b{% else %}#ef4444{% endif %}">
+                                        {{ a.score }}%
+                                    </strong>
+                                {% else %}
+                                    <span class="no-test">Not taken</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ a.submission_time.split('.')[0] if a.submission_time else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state-new">
+                <i class="fas fa-inbox fa-3x"></i>
+                <h3>No Applicants Yet</h3>
+                <p>Applicants will appear here once candidates apply for job postings.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        function filterApplicants() {
+            let searchVal = document.getElementById("applicantSearch").value.toLowerCase();
+            let statusVal = document.getElementById("statusFilter").value.toLowerCase();
+            let rows = document.querySelectorAll("#applicantsTable tbody tr");
+
+            rows.forEach(function(row) {
+                let text = row.innerText.toLowerCase();
+                let matchesSearch = text.includes(searchVal);
+                let matchesStatus = statusVal === "" || text.includes(statusVal);
+                row.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Applicants for {{ job_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* --- General Layout --- */
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: #1e293b; 
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+            margin: auto;
+        }
+        
+        /* --- Threshold Control Dashboard --- */
+        .threshold-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid #cbd5e1;
+        }
+        .threshold-container strong { font-size: 0.9rem; color: #334155; }
+        #thresholdRange { flex-grow: 1; accent-color: #007bff; cursor: pointer; }
+        #thresholdInput {
+            width: 60px; padding: 8px; border: 2px solid #007bff; border-radius: 6px;
+            font-weight: 700; text-align: center; color: #007bff; outline: none;
+        }
+
+        /* --- Table Styling --- */
+        .applicant-table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0; 
+            margin-top: 20px; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            border: 1px solid #e2e8f0; 
+        }
+        .applicant-table th { 
+            background-color: #007bff; 
+            color: white; 
+            font-weight: 600; 
+            padding: 15px; 
+            text-align: left;
+            text-transform: uppercase; 
+            font-size: 0.75rem; 
+        }
+        .applicant-table td { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #e2e8f0; 
+            vertical-align: middle; 
+        }
+        .applicant-row { transition: opacity 0.3s ease, background-color 0.2s; }
+        .applicant-row:hover { background-color: #f1f5f9; }
+
+        /* --- Candidate Styling --- */
+        .candidate-photo {
+            width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .resume-score-val { font-size: 1.1rem; color: #0f172a; text-align: center; }
+        .explanation { font-size: 0.85rem; color: #64748b; line-height: 1.4; max-width: 250px; font-style: italic; }
+
+        /* --- Dynamic Column Styling --- */
+        .col-selected { background-color: rgba(34, 197, 94, 0.05) !important; text-align: center; width: 100px; }
+        .col-rejected { background-color: rgba(239, 68, 68, 0.05) !important; text-align: center; width: 100px; }
+        .check-mark { color: #16a34a; font-size: 1.5rem; font-weight: bold; }
+        .cross-mark { color: #dc2626; font-size: 1.5rem; font-weight: bold; }
+
+        /* --- Buttons --- */
+        .resume-link {
+            display: inline-block; padding: 6px 12px; border-radius: 6px;
+            text-decoration: none; font-size: 0.8rem; font-weight: 600;
+            transition: all 0.2s; text-align: center; margin-bottom: 5px; color: white;
+        }
+        .resume-link:hover { filter: brightness(90%); transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1400px;">
+        <h2>Applicants for: <strong>{{ job_title }}</strong></h2>
+        <p>
+            <a href="{{ url_for('admin_dashboard') }}" style="text-decoration: none; color: #007bff;">← Back to Dashboard</a> | 
+            <a href="{{ url_for('logout') }}" style="text-decoration: none; color: #dc3545;">Logout</a>
+        </p>
+
+        <div class="threshold-container">
+            <strong>Resume Score Threshold:</strong>
+            <input type="range" id="thresholdRange" min="0" max="100" value="50" oninput="updateThreshold(this.value)">
+            <input type="number" id="thresholdInput" min="0" max="100" value="50" oninput="updateThreshold(this.value)">
+            <span style="font-size: 0.85em; color: #64748b;">Candidates below this will be flagged with a cross (✗).</span>
+        </div>
+
+        <h3>Total Applicants: {{ applicants | length }}</h3>
+
+        {% if applicants %}
+            <table class="applicant-table" id="applicantsTable">
+                <thead>
+                    <tr>
+                        <th>Photo</th> 
+                        <th>Candidate</th>
+                        <th>Status</th>
+                        <th>Resume Score</th>
+                        <th>Selected</th>
+                        <th>Rejected</th>
+                        <th>Test Score</th>
+                        <th>Rationale</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for applicant in applicants %}
+                    <tr class="applicant-row" data-score="{{ applicant.resume_score | default(0) }}">
+                        <td style="text-align: center;">
+                            {% if applicant.profile_image_path %}
+                                <img src="{{ url_for('uploaded_file', filename=applicant.profile_image_path) }}" 
+                                     alt="Profile" class="candidate-photo">
+                            {% else %}
+                                <div style="width:48px; height:48px; background:#e2e8f0; border-radius:50%; line-height:48px; font-size:10px; color:#64748b; margin:auto;">No Image</div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <strong style="color: #0f172a;">{{ applicant.name }}</strong><br>
+                            <span style="font-size: 0.85em; color: #64748b;">{{ applicant.email }}</span>
+                        </td>
+                        <td>
+                            <span style="font-weight: 600; font-size: 0.9em;">{{ applicant.status or 'Applied' }}</span>
+                        </td>
+                        <td class="resume-score-val"><strong>{{ applicant.resume_score | default(0) }}</strong></td>
+                        
+                        <td class="col-selected status-cell-selected"></td>
+                        <td class="col-rejected status-cell-rejected"></td>
+
+                        <td style="text-align: center;">{{ applicant.test_score | default('N/A') }}</td>
+                        <td class="explanation">{{ applicant.score_explanation | default('N/A') }}</td>
+                        <td>
+                            <div style="display:flex; flex-direction:column; gap: 5px;">
+                                <a href="{{ url_for('uploaded_file', filename=applicant.resume_path) }}" target="_blank" class="resume-link" style="background-color: #007bff;">View Resume</a>
+                                <a href="{{ url_for('admin_update_status', job_id=job_id, candidate_id=applicant.candidate_id, action='accept') }}" class="resume-link" style="background-color: #16a34a;">Accept</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No candidates have applied for this job yet.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function updateThreshold(val) {
+            document.getElementById('thresholdRange').value = val;
+            document.getElementById('thresholdInput').value = val;
+
+            const threshold = parseInt(val);
+            const rows = document.querySelectorAll('.applicant-row');
+
+            rows.forEach(row => {
+                const score = parseInt(row.getAttribute('data-score'));
+                const selectedCell = row.querySelector('.status-cell-selected');
+                const rejectedCell = row.querySelector('.status-cell-rejected');
+
+                if (score >= threshold) {
+                    selectedCell.innerHTML = '<span class="check-mark">✓</span>';
+                    rejectedCell.innerHTML = '';
+                    row.style.opacity = '1';
+                } else {
+                    selectedCell.innerHTML = '';
+                    rejectedCell.innerHTML = '<span class="cross-mark">✗</span>';
+                    row.style.opacity = '0.6'; 
+                }
+            });
+        }
+
+        window.onload = () => updateThreshold(50);
+    </script>
+</body>
+</html>

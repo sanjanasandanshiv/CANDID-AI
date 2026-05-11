@@ -1,0 +1,1563 @@
+<!-- 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { background: #f4f6f9; font-family: sans-serif; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 28px;
+        }
+        .top-bar h2 { margin: 0; font-size: 1.4em; color: #222; }
+        .top-bar-actions { display: flex; gap: 10px; }
+
+        .btn {
+            display: inline-block; padding: 9px 18px; border-radius: 7px;
+            text-decoration: none; font-size: .88em; font-weight: 600;
+            border: none; cursor: pointer;
+        }
+        .btn-primary  { background: #007bff; color: #fff; }
+        .btn-danger   { background: #dc3545; color: #fff; }
+        .btn-gray     { background: #6c757d; color: #fff; }
+        .btn-sm { padding: 5px 12px; font-size: .8em; }
+
+        .stats-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+        .stat-card {
+            flex: 1; min-width: 120px; background: #fff;
+            border-radius: 10px; padding: 18px 20px; border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        .stat-card .val { font-size: 2em; font-weight: bold; color: #007bff; }
+        .stat-card .lbl { font-size: .78em; color: #888; margin-top: 4px; }
+
+        /* Job cards */
+        .job-card {
+            background: #fff; border-radius: 10px; border: 1px solid #e0e0e0;
+            margin-bottom: 18px; overflow: hidden;
+        }
+        .job-card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 18px 20px; border-bottom: 1px solid #f0f0f0;
+        }
+        .job-title { font-size: 1.05em; font-weight: 600; color: #222; margin-bottom: 4px; }
+        .job-meta  { font-size: .8em; color: #888; }
+
+        .applicant-count {
+            background: #e8f0fe; color: #1a56db;
+            padding: 4px 12px; border-radius: 20px; font-size: .82em; font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .job-actions {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            padding: 12px 20px; background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .test-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: .75em; font-weight: 600; margin-left: 8px;
+            vertical-align: middle;
+        }
+        .badge-softskills { background: #e8d5ff; color: #5a189a; }
+        .badge-mcq        { background: #d0f0fd; color: #0c5460; }
+        .badge-none       { background: #e9ecef; color: #666; }
+
+        .deadline-warn { color: #dc3545; font-weight: 600; }
+
+        .empty-state {
+            text-align: center; padding: 60px; color: #888;
+            background: #fff; border-radius: 10px; border: 1px solid #e0e0e0;
+        }
+
+        .btn-results-soft  { background: #6f42c1; color: #fff; }
+        .btn-results-std   { background: #17a2b8; color: #fff; }
+        .btn-applicants    { background: #28a745; color: #fff; }
+        .btn-create-test   { background: #fd7e14; color: #fff; }
+        .btn-delete        { background: #fff; color: #dc3545; border: 1px solid #dc3545; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="top-bar">
+        <h2>📋 Admin Dashboard</h2>
+        <div class="top-bar-actions">
+            <a href="{{ url_for('admin_create_job') }}" class="btn btn-primary">+ Post New Job</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-gray">Logout</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div class="flash-{{ cat }}" style="padding:10px;margin-bottom:12px;border:1px solid;border-radius:6px;">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="val">{{ jobs | length }}</div>
+            <div class="lbl">Active jobs</div>
+        </div>
+        <div class="stat-card">
+            <div class="val">{{ jobs | sum(attribute='applicant_count') }}</div>
+            <div class="lbl">Total applicants</div>
+        </div>
+    </div>
+
+    {% if jobs %}
+        {% for job in jobs %}
+
+            {# Detect test type from title #}
+            {% set is_softskills = 'soft skill' in (job.title or '') | lower %}
+
+            <div class="job-card">
+                <div class="job-card-header">
+                    <div>
+                        <div class="job-title">
+                            {{ job.title }}
+                            {% if is_softskills %}
+                                <span class="test-badge badge-softskills">🎤 Soft Skills</span>
+                            {% elif job.applicant_count > 0 %}
+                                <span class="test-badge badge-mcq">📝 MCQ / Written</span>
+                            {% else %}
+                                <span class="test-badge badge-none">No test yet</span>
+                            {% endif %}
+                        </div>
+                        <div class="job-meta">
+                            Posted: {{ job.posted_date }} &nbsp;·&nbsp;
+                            Deadline:
+                            <span class="{% if job.deadline < now %}deadline-warn{% endif %}">
+                                {{ job.deadline }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="applicant-count">{{ job.applicant_count }} applicants</div>
+                </div>
+
+                <div class="job-actions">
+
+                    <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}"
+                       class="btn btn-sm btn-applicants">👥 View Applicants</a>
+
+                    <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}"
+                       class="btn btn-sm btn-create-test">⚡ Generate AI Test</a>
+
+                    <a href="{{ url_for('admin_manage_test', job_id=job.id) }}"
+                       class="btn btn-sm" style="background:#adb5bd;color:#fff;">✏️ Manual Test</a>
+
+                    {% if is_softskills %}
+                        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}"
+                           class="btn btn-sm btn-results-soft">🎤 Soft Skills Results</a>
+                        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}"
+                           class="btn btn-sm" style="background:#e9ecef;color:#666;">📊 MCQ Results</a>
+                    {% else %}
+                        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}"
+                           class="btn btn-sm btn-results-std">📊 Test Results</a>
+                        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}"
+                           class="btn btn-sm" style="background:#e9ecef;color:#666;">🎤 Soft Skills Results</a>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin_delete_job', job_id=job.id) }}"
+                       class="btn btn-sm btn-delete"
+                       onclick="return confirm('Delete this job and all associated data?')">🗑 Delete</a>
+
+                </div>
+            </div>
+
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div style="font-size:2.5em;margin-bottom:12px;">📋</div>
+            <h3>No jobs posted yet</h3>
+            <p>Click "Post New Job" to get started.</p>
+        </div>
+    {% endif %}
+
+</div>
+</body>
+</html> -->
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Recruitment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* Container for the buttons */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap; /* CRITICAL: Prevents buttons from overlapping/poking out of the card */
+    gap: 8px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap; /* Keeps icon and text on one line */
+}
+
+/* Primary Result Buttons (Evaluation / MCQ) - They grow to fill space */
+.btn-res-soft, .btn-res-std {
+    flex-grow: 1; 
+    min-width: 140px; /* Ensures they don't get too tiny */
+}
+
+/* Icon-only or Secondary buttons */
+.btn-view { background: #f0fdf4; color: #166534; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.btn-res-std { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+.btn-muted { background: #f1f5f9; color: #64748b; width: 38px; padding: 0; } /* Square icon button */
+.btn-ai { background: #fff7ed; color: #9a3412; width: 38px; padding: 0; }
+.btn-del { background: #fef2f2; color: #991b1b; width: 38px; padding: 0; }
+
+/* Hover Effects */
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Warning for specific button */
+.btn-del:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* Container for all actions */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column; /* Stack the two rows vertically */
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Row Styling */
+.action-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Row 1: Utility Buttons */
+.row-top {
+    justify-content: space-between;
+}
+
+/* Row 2: Results Buttons */
+.row-bottom {
+    justify-content: stretch;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+/* The "View Applicants" button takes the most space in row 1 */
+.btn-view {
+    flex-grow: 1;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+/* Square utility buttons (AI & Delete) */
+.btn-ai, .btn-del {
+    width: 42px;
+    padding: 0;
+}
+
+.btn-ai { background: #fff7ed; color: #9a3412; }
+.btn-del { background: #fef2f2; color: #991b1b; }
+
+/* Result buttons take equal 50/50 width in row 2 */
+.btn-res-std, .btn-res-soft, .btn-muted {
+    flex: 1;
+    border: 1px solid transparent;
+}
+
+.btn-res-std { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+.btn-muted { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+}
+
+
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>HR Panel</span>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li><a href="{{ url_for('hr_all_applicants') }}"><i class="fas fa-users"></i> All Applicants</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                Welcome back, <strong>{{ session.get('username', 'Admin') }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-name"><i class="fas fa-user-circle"></i> {{ session.get('username', 'Administrator') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}{% for cat, msg in messages %}
+                    <div class="flash-{{ cat }} animate-fade-in">{{ msg }}</div>
+                {% endfor %}{% endif %}
+            {% endwith %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-briefcase"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | length }}</span>
+                        <span class="lbl">Active Jobs</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | sum(attribute='applicant_count') }}</span>
+                        <span class="lbl">Total Applicants</span>
+                    </div>
+                </div>
+            </section>
+
+            <h3 class="section-title">Current Job Postings</h3>
+
+            {% if jobs %}
+                <div class="job-grid">
+                {% for job in jobs %}
+                    {% set is_softskills = 'soft skill' in (job.title or '') | lower %}
+                    <div class="job-card-new animate-slide-up">
+                        <div class="job-card-header-new">
+                            <div class="title-area">
+                                <h4>{{ job.title }}</h4>
+                                <div class="job-meta">
+                                    <span><i class="far fa-calendar-alt"></i> {{ job.posted_date }}</span>
+                                    <span class="{% if job.deadline < now %}deadline-warn{% endif %}">
+                                        <i class="far fa-clock"></i> {{ job.deadline }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="status-badge">
+                                {% if is_softskills %}
+                                    <span class="badge b-soft"><i class="fas fa-microphone"></i> Soft Skills</span>
+                                {% elif job.applicant_count > 0 %}
+                                    <span class="badge b-mcq"><i class="fas fa-file-alt"></i> MCQ</span>
+                                {% else %}
+                                    <span class="badge b-none">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="job-stats-mini">
+                            <strong>{{ job.applicant_count }}</strong> Applicants registered
+                        </div>
+
+<div class="job-actions-new">
+    <div class="action-row row-top">
+        <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}" class="act-btn btn-view" title="View Applicants">
+            <i class="fas fa-users"></i> <span>View Applicants</span>
+        </a>
+        <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}" class="act-btn btn-ai" title="AI Test Generator">
+            <i class="fas fa-bolt"></i>
+        </a>
+        <a href="{{ url_for('admin_delete_job', job_id=job.id) }}" class="act-btn btn-del" onclick="return confirm('Permanent Delete?')" title="Delete">
+            <i class="fas fa-trash"></i>
+        </a>
+    </div>
+
+    <div class="action-row row-bottom">
+        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}" 
+           class="act-btn {% if not is_softskills %}btn-res-std{% else %}btn-muted{% endif %}">
+           <i class="fas fa-chart-bar"></i> <span>MCQ Result</span>
+        </a>
+
+        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}" 
+           class="act-btn {% if is_softskills %}btn-res-soft{% else %}btn-muted{% endif %}">
+           <i class="fas fa-video"></i> <span>Soft Result</span>
+        </a>
+    </div>
+</div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-new animate-fade-in">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" width="80">
+                    <h3>No active listings</h3>
+                    <p>Ready to find new talent?</p>
+                    <a href="{{ url_for('admin_create_job') }}" class="btn-primary-new">Create First Job</a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>  -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Recruitment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* Container for the buttons */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap; /* CRITICAL: Prevents buttons from overlapping/poking out of the card */
+    gap: 8px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap; /* Keeps icon and text on one line */
+}
+
+/* Primary Result Buttons (Evaluation / MCQ) - They grow to fill space */
+.btn-res-soft, .btn-res-std {
+    flex-grow: 1; 
+    min-width: 140px; /* Ensures they don't get too tiny */
+}
+
+/* Icon-only or Secondary buttons */
+.btn-view { background: #f0fdf4; color: #166534; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.btn-res-std { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+.btn-muted { background: #f1f5f9; color: #64748b; width: 38px; padding: 0; } /* Square icon button */
+.btn-ai { background: #fff7ed; color: #9a3412; width: 38px; padding: 0; }
+.btn-del { background: #fef2f2; color: #991b1b; width: 38px; padding: 0; }
+
+/* Hover Effects */
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Warning for specific button */
+.btn-del:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* Container for all actions */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column; /* Stack the two rows vertically */
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Row Styling */
+.action-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Row 1: Utility Buttons */
+.row-top {
+    justify-content: space-between;
+}
+
+/* Row 2: Results Buttons */
+.row-bottom {
+    justify-content: stretch;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+/* The "View Applicants" button takes the most space in row 1 */
+.btn-view {
+    flex-grow: 1;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+/* Square utility buttons (AI & Delete) */
+.btn-ai, .btn-del {
+    width: 42px;
+    padding: 0;
+}
+
+.btn-ai { background: #fff7ed; color: #9a3412; }
+.btn-del { background: #fef2f2; color: #991b1b; }
+
+/* Result buttons take equal 50/50 width in row 2 */
+.btn-res-std, .btn-res-soft, .btn-muted {
+    flex: 1;
+    border: 1px solid transparent;
+}
+
+.btn-res-std { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+.btn-muted { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+}
+
+
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>HR Panel</span>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li><a href="{{ url_for('hr_all_applicants') }}"><i class="fas fa-users"></i> All Applicants</a></li>
+            <li><a href="{{ url_for('admin_view_analysis') }}"><i class="fas fa-chart-bar"></i> View Analysis</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                Welcome back, <strong>{{ session.get('username', 'Admin') }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-name"><i class="fas fa-user-circle"></i> {{ session.get('username', 'Administrator') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}{% for cat, msg in messages %}
+                    <div class="flash-{{ cat }} animate-fade-in">{{ msg }}</div>
+                {% endfor %}{% endif %}
+            {% endwith %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-briefcase"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | length }}</span>
+                        <span class="lbl">Active Jobs</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | sum(attribute='applicant_count') }}</span>
+                        <span class="lbl">Total Applicants</span>
+                    </div>
+                </div>
+            </section>
+
+            <h3 class="section-title">Current Job Postings</h3>
+
+            {% if jobs %}
+                <div class="job-grid">
+                {% for job in jobs %}
+                    {% set is_softskills = 'soft skill' in (job.title or '') | lower %}
+                    <div class="job-card-new animate-slide-up">
+                        <div class="job-card-header-new">
+                            <div class="title-area">
+                                <h4>{{ job.title }}</h4>
+                                <div class="job-meta">
+                                    <span><i class="far fa-calendar-alt"></i> {{ job.posted_date }}</span>
+                                    <span class="{% if job.deadline < now %}deadline-warn{% endif %}">
+                                        <i class="far fa-clock"></i> {{ job.deadline }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="status-badge">
+                                {% if is_softskills %}
+                                    <span class="badge b-soft"><i class="fas fa-microphone"></i> Soft Skills</span>
+                                {% elif job.applicant_count > 0 %}
+                                    <span class="badge b-mcq"><i class="fas fa-file-alt"></i> MCQ</span>
+                                {% else %}
+                                    <span class="badge b-none">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="job-stats-mini">
+                            <strong>{{ job.applicant_count }}</strong> Applicants registered
+                        </div>
+
+                        <!-- <div class="job-actions-new">
+                            <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}" class="act-btn btn-view" title="View Applicants"><i class="fas fa-users"></i></a>
+                            <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}" class="act-btn btn-ai" title="AI Test"><i class="fas fa-bolt"></i></a>
+                            
+                            {% if is_softskills %}
+                                <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}" class="act-btn btn-res-soft" title="Soft Skills Results"><i class="fas fa-microphone-lines"></i></a>
+                            {% else %}
+                                <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}" class="act-btn btn-res-std" title="Test Results"><i class="fas fa-poll"></i></a>
+                            {% endif %}
+                            
+                            <a href="{{ url_for('admin_delete_job', job_id=job.id) }}" class="act-btn btn-del" onclick="return confirm('Delete job?')" title="Delete"><i class="fas fa-trash"></i></a>
+                        </div> -->
+<!-- <div class="job-actions-new">
+    <div class="action-row row-top">
+        <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}" class="act-btn btn-view" title="View Applicants">
+            <i class="fas fa-users"></i> <span>View Applicants</span>
+        </a>
+        <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}" class="act-btn btn-ai" title="AI Test Generator">
+            <i class="fas fa-bolt"></i>
+        </a>
+        <a href="{{ url_for('admin_delete_job', job_id=job.id) }}" class="act-btn btn-del" onclick="return confirm('Permanent Delete?')" title="Delete">
+            <i class="fas fa-trash"></i>
+        </a>
+    </div>
+
+    <div class="action-row row-bottom">
+        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}" 
+           class="act-btn {% if not is_softskills %}btn-res-std{% else %}btn-muted{% endif %}">
+           <i class="fas fa-chart-bar"></i> <span>MCQ Result</span>
+        </a>
+
+        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}" 
+           class="act-btn {% if is_softskills %}btn-res-soft{% else %}btn-muted{% endif %}">
+           <i class="fas fa-video"></i> <span>Soft Result</span>
+        </a>
+    </div>
+</div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-new animate-fade-in">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" width="80">
+                    <h3>No active listings</h3>
+                    <p>Ready to find new talent?</p>
+                    <a href="{{ url_for('admin_create_job') }}" class="btn-primary-new">Create First Job</a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html> --> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { background: #f4f6f9; font-family: sans-serif; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 28px;
+        }
+        .top-bar h2 { margin: 0; font-size: 1.4em; color: #222; }
+        .top-bar-actions { display: flex; gap: 10px; }
+
+        .btn {
+            display: inline-block; padding: 9px 18px; border-radius: 7px;
+            text-decoration: none; font-size: .88em; font-weight: 600;
+            border: none; cursor: pointer;
+        }
+        .btn-primary  { background: #007bff; color: #fff; }
+        .btn-danger   { background: #dc3545; color: #fff; }
+        .btn-gray     { background: #6c757d; color: #fff; }
+        .btn-sm { padding: 5px 12px; font-size: .8em; }
+
+        .stats-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+        .stat-card {
+            flex: 1; min-width: 120px; background: #fff;
+            border-radius: 10px; padding: 18px 20px; border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        .stat-card .val { font-size: 2em; font-weight: bold; color: #007bff; }
+        .stat-card .lbl { font-size: .78em; color: #888; margin-top: 4px; }
+
+        /* Job cards */
+        .job-card {
+            background: #fff; border-radius: 10px; border: 1px solid #e0e0e0;
+            margin-bottom: 18px; overflow: hidden;
+        }
+        .job-card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 18px 20px; border-bottom: 1px solid #f0f0f0;
+        }
+        .job-title { font-size: 1.05em; font-weight: 600; color: #222; margin-bottom: 4px; }
+        .job-meta  { font-size: .8em; color: #888; }
+
+        .applicant-count {
+            background: #e8f0fe; color: #1a56db;
+            padding: 4px 12px; border-radius: 20px; font-size: .82em; font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .job-actions {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            padding: 12px 20px; background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .test-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: .75em; font-weight: 600; margin-left: 8px;
+            vertical-align: middle;
+        }
+        .badge-softskills { background: #e8d5ff; color: #5a189a; }
+        .badge-mcq        { background: #d0f0fd; color: #0c5460; }
+        .badge-none       { background: #e9ecef; color: #666; }
+
+        .deadline-warn { color: #dc3545; font-weight: 600; }
+
+        .empty-state {
+            text-align: center; padding: 60px; color: #888;
+            background: #fff; border-radius: 10px; border: 1px solid #e0e0e0;
+        }
+
+        .btn-results-soft  { background: #6f42c1; color: #fff; }
+        .btn-results-std   { background: #17a2b8; color: #fff; }
+        .btn-applicants    { background: #28a745; color: #fff; }
+        .btn-create-test   { background: #fd7e14; color: #fff; }
+        .btn-delete        { background: #fff; color: #dc3545; border: 1px solid #dc3545; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="top-bar">
+        <h2>📋 Admin Dashboard</h2>
+        <div class="top-bar-actions">
+            <a href="{{ url_for('admin_create_job') }}" class="btn btn-primary">+ Post New Job</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-gray">Logout</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+            <div class="flash-{{ cat }}" style="padding:10px;margin-bottom:12px;border:1px solid;border-radius:6px;">{{ msg }}</div>
+        {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="val">{{ jobs | length }}</div>
+            <div class="lbl">Active jobs</div>
+        </div>
+        <div class="stat-card">
+            <div class="val">{{ jobs | sum(attribute='applicant_count') }}</div>
+            <div class="lbl">Total applicants</div>
+        </div>
+    </div>
+
+    {% if jobs %}
+        {% for job in jobs %}
+
+            {# Detect test type from title #}
+            {% set is_softskills = 'soft skill' in (job.title or '') | lower %}
+
+            <div class="job-card">
+                <div class="job-card-header">
+                    <div>
+                        <div class="job-title">
+                            {{ job.title }}
+                            {% if is_softskills %}
+                                <span class="test-badge badge-softskills">🎤 Soft Skills</span>
+                            {% elif job.applicant_count > 0 %}
+                                <span class="test-badge badge-mcq">📝 MCQ / Written</span>
+                            {% else %}
+                                <span class="test-badge badge-none">No test yet</span>
+                            {% endif %}
+                        </div>
+                        <div class="job-meta">
+                            Posted: {{ job.posted_date }} &nbsp;·&nbsp;
+                            Deadline:
+                            <span class="{% if job.deadline < now %}deadline-warn{% endif %}">
+                                {{ job.deadline }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="applicant-count">{{ job.applicant_count }} applicants</div>
+                </div>
+
+                <div class="job-actions">
+
+                    <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}"
+                       class="btn btn-sm btn-applicants">👥 View Applicants</a>
+
+                    <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}"
+                       class="btn btn-sm btn-create-test">⚡ Generate AI Test</a>
+
+                    <a href="{{ url_for('admin_manage_test', job_id=job.id) }}"
+                       class="btn btn-sm" style="background:#adb5bd;color:#fff;">✏️ Manual Test</a>
+
+                    {% if is_softskills %}
+                        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}"
+                           class="btn btn-sm btn-results-soft">🎤 Soft Skills Results</a>
+                        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}"
+                           class="btn btn-sm" style="background:#e9ecef;color:#666;">📊 MCQ Results</a>
+                    {% else %}
+                        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}"
+                           class="btn btn-sm btn-results-std">📊 Test Results</a>
+                        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}"
+                           class="btn btn-sm" style="background:#e9ecef;color:#666;">🎤 Soft Skills Results</a>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin_delete_job', job_id=job.id) }}"
+                       class="btn btn-sm btn-delete"
+                       onclick="return confirm('Delete this job and all associated data?')">🗑 Delete</a>
+
+                </div>
+            </div>
+
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div style="font-size:2.5em;margin-bottom:12px;">📋</div>
+            <h3>No jobs posted yet</h3>
+            <p>Click "Post New Job" to get started.</p>
+        </div>
+    {% endif %}
+
+</div>
+</body>
+</html> -->
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Recruitment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* Container for the buttons */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap; /* CRITICAL: Prevents buttons from overlapping/poking out of the card */
+    gap: 8px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap; /* Keeps icon and text on one line */
+}
+
+/* Primary Result Buttons (Evaluation / MCQ) - They grow to fill space */
+.btn-res-soft, .btn-res-std {
+    flex-grow: 1; 
+    min-width: 140px; /* Ensures they don't get too tiny */
+}
+
+/* Icon-only or Secondary buttons */
+.btn-view { background: #f0fdf4; color: #166534; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.btn-res-std { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+.btn-muted { background: #f1f5f9; color: #64748b; width: 38px; padding: 0; } /* Square icon button */
+.btn-ai { background: #fff7ed; color: #9a3412; width: 38px; padding: 0; }
+.btn-del { background: #fef2f2; color: #991b1b; width: 38px; padding: 0; }
+
+/* Hover Effects */
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Warning for specific button */
+.btn-del:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* Container for all actions */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column; /* Stack the two rows vertically */
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Row Styling */
+.action-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Row 1: Utility Buttons */
+.row-top {
+    justify-content: space-between;
+}
+
+/* Row 2: Results Buttons */
+.row-bottom {
+    justify-content: stretch;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+/* The "View Applicants" button takes the most space in row 1 */
+.btn-view {
+    flex-grow: 1;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+/* Square utility buttons (AI & Delete) */
+.btn-ai, .btn-del {
+    width: 42px;
+    padding: 0;
+}
+
+.btn-ai { background: #fff7ed; color: #9a3412; }
+.btn-del { background: #fef2f2; color: #991b1b; }
+
+/* Result buttons take equal 50/50 width in row 2 */
+.btn-res-std, .btn-res-soft, .btn-muted {
+    flex: 1;
+    border: 1px solid transparent;
+}
+
+.btn-res-std { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+.btn-muted { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+}
+
+
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>HR Panel</span>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li><a href="{{ url_for('hr_all_applicants') }}"><i class="fas fa-users"></i> All Applicants</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                Welcome back, <strong>{{ session.get('username', 'Admin') }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-name"><i class="fas fa-user-circle"></i> {{ session.get('username', 'Administrator') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}{% for cat, msg in messages %}
+                    <div class="flash-{{ cat }} animate-fade-in">{{ msg }}</div>
+                {% endfor %}{% endif %}
+            {% endwith %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-briefcase"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | length }}</span>
+                        <span class="lbl">Active Jobs</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | sum(attribute='applicant_count') }}</span>
+                        <span class="lbl">Total Applicants</span>
+                    </div>
+                </div>
+            </section>
+
+            <h3 class="section-title">Current Job Postings</h3>
+
+            {% if jobs %}
+                <div class="job-grid">
+                {% for job in jobs %}
+                    {% set is_softskills = 'soft skill' in (job.title or '') | lower %}
+                    <div class="job-card-new animate-slide-up">
+                        <div class="job-card-header-new">
+                            <div class="title-area">
+                                <h4>{{ job.title }}</h4>
+                                <div class="job-meta">
+                                    <span><i class="far fa-calendar-alt"></i> {{ job.posted_date }}</span>
+                                    <span class="{% if job.deadline < now %}deadline-warn{% endif %}">
+                                        <i class="far fa-clock"></i> {{ job.deadline }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="status-badge">
+                                {% if is_softskills %}
+                                    <span class="badge b-soft"><i class="fas fa-microphone"></i> Soft Skills</span>
+                                {% elif job.applicant_count > 0 %}
+                                    <span class="badge b-mcq"><i class="fas fa-file-alt"></i> MCQ</span>
+                                {% else %}
+                                    <span class="badge b-none">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="job-stats-mini">
+                            <strong>{{ job.applicant_count }}</strong> Applicants registered
+                        </div>
+
+<div class="job-actions-new">
+    <div class="action-row row-top">
+        <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}" class="act-btn btn-view" title="View Applicants">
+            <i class="fas fa-users"></i> <span>View Applicants</span>
+        </a>
+        <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}" class="act-btn btn-ai" title="AI Test Generator">
+            <i class="fas fa-bolt"></i>
+        </a>
+        <a href="{{ url_for('admin_delete_job', job_id=job.id) }}" class="act-btn btn-del" onclick="return confirm('Permanent Delete?')" title="Delete">
+            <i class="fas fa-trash"></i>
+        </a>
+    </div>
+
+    <div class="action-row row-bottom">
+        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}" 
+           class="act-btn {% if not is_softskills %}btn-res-std{% else %}btn-muted{% endif %}">
+           <i class="fas fa-chart-bar"></i> <span>MCQ Result</span>
+        </a>
+
+        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}" 
+           class="act-btn {% if is_softskills %}btn-res-soft{% else %}btn-muted{% endif %}">
+           <i class="fas fa-video"></i> <span>Soft Result</span>
+        </a>
+    </div>
+</div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-new animate-fade-in">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" width="80">
+                    <h3>No active listings</h3>
+                    <p>Ready to find new talent?</p>
+                    <a href="{{ url_for('admin_create_job') }}" class="btn-primary-new">Create First Job</a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>  -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Recruitment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* Container for the buttons */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap; /* CRITICAL: Prevents buttons from overlapping/poking out of the card */
+    gap: 8px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap; /* Keeps icon and text on one line */
+}
+
+/* Primary Result Buttons (Evaluation / MCQ) - They grow to fill space */
+.btn-res-soft, .btn-res-std {
+    flex-grow: 1; 
+    min-width: 140px; /* Ensures they don't get too tiny */
+}
+
+/* Icon-only or Secondary buttons */
+.btn-view { background: #f0fdf4; color: #166534; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.btn-res-std { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+.btn-muted { background: #f1f5f9; color: #64748b; width: 38px; padding: 0; } /* Square icon button */
+.btn-ai { background: #fff7ed; color: #9a3412; width: 38px; padding: 0; }
+.btn-del { background: #fef2f2; color: #991b1b; width: 38px; padding: 0; }
+
+/* Hover Effects */
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Warning for specific button */
+.btn-del:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* Container for all actions */
+.job-actions-new {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column; /* Stack the two rows vertically */
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Row Styling */
+.action-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Row 1: Utility Buttons */
+.row-top {
+    justify-content: space-between;
+}
+
+/* Row 2: Results Buttons */
+.row-bottom {
+    justify-content: stretch;
+}
+
+/* Base button style */
+.act-btn {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+/* The "View Applicants" button takes the most space in row 1 */
+.btn-view {
+    flex-grow: 1;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+/* Square utility buttons (AI & Delete) */
+.btn-ai, .btn-del {
+    width: 42px;
+    padding: 0;
+}
+
+.btn-ai { background: #fff7ed; color: #9a3412; }
+.btn-del { background: #fef2f2; color: #991b1b; }
+
+/* Result buttons take equal 50/50 width in row 2 */
+.btn-res-std, .btn-res-soft, .btn-muted {
+    flex: 1;
+    border: 1px solid transparent;
+}
+
+.btn-res-std { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+.btn-res-soft { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+.btn-muted { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+
+.act-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.96);
+}
+
+
+</style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i> <span>HR Panel</span>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="#"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_create_job') }}"><i class="fas fa-plus-circle"></i> Post New Job</a></li>
+            <li><a href="{{ url_for('hr_all_applicants') }}"><i class="fas fa-users"></i> All Applicants</a></li>
+            <li><a href="{{ url_for('admin_view_analysis') }}"><i class="fas fa-chart-bar"></i> View Analysis</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Recruitment AI</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                Welcome back, <strong>{{ session.get('username', 'Admin') }}</strong>
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-name"><i class="fas fa-user-circle"></i> {{ session.get('username', 'Administrator') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}{% for cat, msg in messages %}
+                    <div class="flash-{{ cat }} animate-fade-in">{{ msg }}</div>
+                {% endfor %}{% endif %}
+            {% endwith %}
+
+            <section class="stats-grid">
+                <div class="stat-card-new animate-slide-up">
+                    <div class="stat-icon blue"><i class="fas fa-briefcase"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | length }}</span>
+                        <span class="lbl">Active Jobs</span>
+                    </div>
+                </div>
+                <div class="stat-card-new animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="stat-icon green"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-info">
+                        <span class="val">{{ jobs | sum(attribute='applicant_count') }}</span>
+                        <span class="lbl">Total Applicants</span>
+                    </div>
+                </div>
+            </section>
+
+            <h3 class="section-title">Current Job Postings</h3>
+
+            {% if jobs %}
+                <div class="job-grid">
+                {% for job in jobs %}
+                    {% set is_softskills = 'soft skill' in (job.title or '') | lower %}
+                    <div class="job-card-new animate-slide-up">
+                        <div class="job-card-header-new">
+                            <div class="title-area">
+                                <h4>{{ job.title }}</h4>
+                                <div class="job-meta">
+                                    <span><i class="far fa-calendar-alt"></i> {{ job.posted_date }}</span>
+                                    <span class="{% if job.deadline < now %}deadline-warn{% endif %}">
+                                        <i class="far fa-clock"></i> {{ job.deadline }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="status-badge">
+                                {% if is_softskills %}
+                                    <span class="badge b-soft"><i class="fas fa-microphone"></i> Soft Skills</span>
+                                {% elif job.applicant_count > 0 %}
+                                    <span class="badge b-mcq"><i class="fas fa-file-alt"></i> MCQ</span>
+                                {% else %}
+                                    <span class="badge b-none">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="job-stats-mini">
+                            <strong>{{ job.applicant_count }}</strong> Applicants registered
+                        </div>
+
+    
+<div class="job-actions-new">
+    <div class="action-row row-top">
+        <a href="{{ url_for('admin_view_applicants', job_id=job.id) }}" class="act-btn btn-view" title="View Applicants">
+            <i class="fas fa-users"></i> <span>View Applicants</span>
+        </a>
+        <a href="{{ url_for('admin_create_ai_test', job_id=job.id) }}" class="act-btn btn-ai" title="AI Test Generator">
+            <i class="fas fa-bolt"></i>
+        </a>
+        <a href="{{ url_for('admin_delete_job', job_id=job.id) }}" class="act-btn btn-del" onclick="return confirm('Permanent Delete?')" title="Delete">
+            <i class="fas fa-trash"></i>
+        </a>
+    </div>
+
+    <div class="action-row row-bottom">
+        <a href="{{ url_for('admin_view_test_results', job_id=job.id) }}" 
+           class="act-btn {% if not is_softskills %}btn-res-std{% else %}btn-muted{% endif %}">
+           <i class="fas fa-chart-bar"></i> <span>MCQ Result</span>
+        </a>
+
+        <a href="{{ url_for('softskills.admin_softskills_results', job_id=job.id) }}" 
+           class="act-btn {% if is_softskills %}btn-res-soft{% else %}btn-muted{% endif %}">
+           <i class="fas fa-video"></i> <span>Soft Result</span>
+        </a>
+    </div>
+</div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-new animate-fade-in">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" width="80">
+                    <h3>No active listings</h3>
+                    <p>Ready to find new talent?</p>
+                    <a href="{{ url_for('admin_create_job') }}" class="btn-primary-new">Create First Job</a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

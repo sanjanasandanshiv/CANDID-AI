@@ -1,0 +1,456 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Job Posting | Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Styles for Job Creation */
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            border-bottom: 2px solid #f1f5f9;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+        }
+
+        .form-header h2 {
+            color: var(--royal-blue);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .input-group input, 
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .input-group input:focus, 
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--royal-blue);
+            box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1);
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-submit-job {
+            background: var(--royal-blue);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit-job:hover {
+            background: var(--electric-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 35, 102, 0.2);
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-briefcase"></i> <span>HR Panel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
+            <li class="active"><a href="#"><i class="fas fa-plus-square"></i> Create Job</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Applicants</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Admin Portal</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+              
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-badge">Admin Mode</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            </div>
+        </header>
+
+        <div class="container-fluid animate-slide-up">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-file-signature"></i> Create New Job Posting</h2>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-{{ category }} animate-fade-in">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    <div class="input-group">
+                        <label for="title">Job Title</label>
+                        <input type="text" id="title" name="title" required placeholder="e.g. Senior Python Developer">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="description">Job Description</label>
+                        <textarea id="description" name="description" rows="6" required placeholder="Provide a detailed overview of the role and responsibilities..."></textarea>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="requirements">Key Requirements</label>
+                        <textarea id="requirements" name="requirements" rows="4" placeholder="e.g. 3+ years React experience, Knowledge of SQL..."></textarea>
+                        <div class="helper-text">
+                            <i class="fas fa-robot"></i> These keywords are used by the AI to score candidate resumes.
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="deadline">Application Deadline</label>
+                        <input type="date" id="deadline" name="deadline" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit-job">
+                        <i class="fas fa-paper-plane"></i> Publish Job Posting
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Set minimum date to today for the deadline input
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T');
+            document.getElementById('deadline').setAttribute('min', today);
+        });
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Job Posting | Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Styles for Job Creation */
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            border-bottom: 2px solid #f1f5f9;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+        }
+
+        .form-header h2 {
+            color: var(--royal-blue);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .input-group input, 
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .input-group input:focus, 
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--royal-blue);
+            box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1);
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-submit-job {
+            background: var(--royal-blue);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit-job:hover {
+            background: var(--electric-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 35, 102, 0.2);
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-briefcase"></i> <span>HR Panel</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
+            <li class="active"><a href="#"><i class="fas fa-plus-square"></i> Create Job</a></li>
+            <li><a href="{{ url_for('admin_view_past_tests') }}"><i class="fas fa-history"></i> View Past Tests</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Applicants</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Admin Portal</p>
+        </div>
+    </nav>
+
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+              
+            </div>
+            <div class="top-nav-actions">
+                <span class="admin-badge">Admin Mode</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            </div>
+        </header>
+
+        <div class="container-fluid animate-slide-up">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-file-signature"></i> Create New Job Posting</h2>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-{{ category }} animate-fade-in">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    <div class="input-group">
+                        <label for="title">Job Title</label>
+                        <input type="text" id="title" name="title" required placeholder="e.g. Senior Python Developer">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="description">Job Description</label>
+                        <textarea id="description" name="description" rows="6" required placeholder="Provide a detailed overview of the role and responsibilities..."></textarea>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="requirements">Key Requirements</label>
+                        <textarea id="requirements" name="requirements" rows="4" placeholder="e.g. 3+ years React experience, Knowledge of SQL..."></textarea>
+                        <div class="helper-text">
+                            <i class="fas fa-robot"></i> These keywords are used by the AI to score candidate resumes.
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="deadline">Application Deadline</label>
+                        <input type="date" id="deadline" name="deadline" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit-job">
+                        <i class="fas fa-paper-plane"></i> Publish Job Posting
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Set minimum date to today for the deadline input
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T');
+            document.getElementById('deadline').setAttribute('min', today);
+        });
+    </script>
+</body>
+</html> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

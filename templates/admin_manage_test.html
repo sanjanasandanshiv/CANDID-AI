@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Test | {{ job.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .editor-container { max-width: 900px; margin: 0 auto; }
+        
+        .manual-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-left: 5px solid #64748b; /* Neutral gray for manual tasks */
+        }
+
+        /* Instructions Styling */
+        .instructions {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .instructions pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        /* JSON Textarea */
+        textarea#questions_json {
+            min-height: 350px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: #fcfdfe;
+            border: 2px solid #e2e8f0;
+            padding: 15px;
+            line-height: 1.6;
+            color: #334155;
+            resize: vertical;
+        }
+
+        textarea#questions_json:focus {
+            background: #fff;
+            border-color: var(--royal-blue);
+            box-shadow: 0 0 0 4px rgba(0, 35, 102, 0.05);
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ai-promo {
+            background: linear-gradient(135deg, #f38f00, #ffb347);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+        }
+
+        .ai-promo:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 15px rgba(243, 143, 0, 0.3);
+        }
+
+        .btn-update {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: var(--transition);
+        }
+
+        .btn-update:hover { background: #0f172a; }
+
+        .dt-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-terminal"></i> <span>RecruitHQ</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
+            <li class="active"><a href="#"><i class="fas fa-edit"></i> Manual Editor</a></li>
+            <li><a href="{{ url_for('admin_view_test_results', job_id=job_id) }}"><i class="fas fa-poll"></i> Results</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p>© 2026 Admin Portal</p>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="user-greeting">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-back-link">
+                    <i class="fas fa-chevron-left"></i> Dashboard
+                </a>
+            </div>
+            <div class="top-nav-actions">
+                <a href="{{ url_for('admin_create_ai_test', job_id=job_id) }}" class="ai-promo">
+                    <i class="fas fa-robot"></i> Use AI Generator
+                </a>
+            </div>
+        </header>
+
+        <div class="editor-container">
+            <div class="animate-slide-up">
+                <h2 style="margin-bottom: 5px;">{{ 'Edit' if test else 'Create' }} Manual Test</h2>
+                <p style="color:#64748b; margin-bottom: 25px;">Configuring questions for <strong style="color:#334155">{{ job.title }}</strong></p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}{% for cat, msg in messages %}
+                    <div class="flash-{{ cat }} animate-fade-in">{{ msg }}</div>
+                {% endfor %}{% endif %}
+            {% endwith %}
+
+            <div class="manual-card animate-slide-up">
+                <form method="POST">
+                    <div class="form-section-title"><i class="fas fa-cog"></i> Test Configuration</div>
+                    
+                    <div class="field-group">
+                        <label for="title">Test Title</label>
+                        <input type="text" id="title" name="title" value="{{ test.title if test else '' }}" required placeholder="e.g. Python Backend Quiz">
+                    </div>
+                    
+                    <div class="dt-grid">
+                        <div class="field-group">
+                            <label for="duration">Duration (Minutes)</label>
+                            <input type="number" id="duration" name="duration" value="{{ test.duration_minutes if test else 60 }}" required>
+                        </div>
+                        <div class="field-group">
+                            <label>Start Date & Time</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="date" name="start_date" value="{{ (test.start_time.split() if test else '') }}" required>
+                                <input type="time" name="start_time" value="{{ (test.start_time.split().rsplit(':', 1) if test else '') }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="instructions">
+                        <p><strong><i class="fas fa-code"></i> JSON Schema Guide:</strong></p>
+                        <p style="font-size: 0.8rem; color: #64748b;">Paste your questions array below. Supported types: <code>"text"</code> or <code>"radio"</code>.</p>
+                        <pre>[
+  {
+    "q": "What is Flask?", 
+    "type": "text",
+    "answer": "micro web framework"
+  }
+]</pre>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="questions_json">Questions (JSON)</label>
+                        <textarea id="questions_json" name="questions_json" required>{{ test.questions_json if test else '[]' }}</textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-update">
+                        <i class="fas fa-save"></i> {{ 'Update Test Data' if test else 'Save Manual Test' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Simple JSON Validator before submit
+        document.querySelector('form').onsubmit = function(e) {
+            const jsonInput = document.getElementById('questions_json').value;
+            try {
+                JSON.parse(jsonInput);
+            } catch (err) {
+                alert("Invalid JSON format! Please check your brackets and commas.");
+                e.preventDefault();
+            }
+        };
+    </script>
+</body>
+</html>

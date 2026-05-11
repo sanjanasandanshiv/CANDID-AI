@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opportunities | Candid HR</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- Theme Variables --- */
+        :root {
+            --royal-blue: #002366;
+            --indigo-dark: #1e1b4b;
+            --sidebar-width: 260px;
+            --bg-light: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Layout Reset --- */
+        * { box-sizing: border-box; }
+        body { 
+            background: var(--bg-light); 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            margin: 0;
+            display: flex;
+            color: var(--text-main);
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--indigo-dark);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .nav-item { margin-bottom: 10px; }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+        }
+
+        .nav-link.active { background: var(--royal-blue); }
+
+        /* --- Main Content & Top Navbar --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-navbar {
+            height: 75px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-profile-tag {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f1f5f9;
+            padding: 8px 18px;
+            border-radius: 99px;
+            font-weight: 600;
+            color: var(--indigo-dark);
+            border: 1px solid #e2e8f0;
+        }
+
+        .nav-logout-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: #fee2e2;
+            color: #b91c1c;
+            text-decoration: none;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: var(--transition);
+            border: 1px solid #fecaca;
+        }
+
+        .nav-logout-inline:hover {
+            background: #fecaca;
+            transform: translateY(-1px);
+        }
+
+        /* --- Content Body --- */
+        .content-body { padding: 40px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+        .page-header { margin-bottom: 35px; }
+        .page-header h1 { font-size: 2rem; color: var(--indigo-dark); font-weight: 800; margin: 0; }
+        .page-header p { color: var(--text-muted); margin: 8px 0 0; font-size: 1.1rem; }
+
+        /* --- Job Cards --- */
+        .job-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .job-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
+
+        .job-card h3 { margin: 0 0 12px; font-size: 1.45rem; color: var(--royal-blue); }
+
+        .job-meta { display: flex; gap: 20px; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+        .job-meta span { display: flex; align-items: center; gap: 6px; }
+
+        .job-desc { color: #475569; line-height: 1.6; margin-bottom: 25px; font-size: 0.95rem; }
+
+        /* --- Badges --- */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 0.05em;
+        }
+        .badge-applied { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .badge-selected { background: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
+        .badge-completed { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+        /* --- Buttons --- */
+        .btn-apply {
+            background: var(--royal-blue);
+            color: white;
+            padding: 12px 26px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+            border: none;
+        }
+        .btn-apply:hover { background: var(--indigo-dark); box-shadow: 0 10px 15px -3px rgba(0, 35, 102, 0.2); }
+
+        /* --- Test/Assessment Section --- */
+        .test-invite-box {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-left: 6px solid #f59e0b;
+            padding: 25px;
+            border-radius: 16px;
+            margin-top: 20px;
+        }
+        .test-invite-box h4 { margin: 0 0 8px; color: #92400e; display: flex; align-items: center; gap: 10px; }
+        .btn-test {
+            background: #f59e0b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+        .btn-test:hover { background: #d97706; transform: scale(1.02); }
+
+        /* --- Mobile Responsive --- */
+        @media (max-width: 768px) {
+            .sidebar { width: 75px; padding: 30px 10px; }
+            .sidebar span, .sidebar-logo span { display: none; }
+            .main-content { margin-left: 75px; width: calc(100% - 75px); }
+            .top-navbar { padding: 0 20px; }
+            .user-profile-tag span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <a href="#" class="sidebar-logo">
+            <span style="font-size: 1.8rem;">✨</span>
+            <span>Candid AI</span>
+        </a>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="{{ url_for('candidate_jobs') }}" class="nav-link active">
+                    <i class="fas fa-briefcase"></i> <span>Opportunities</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('candidate_profile') }}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> <span>My Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('candidate_messages') }}" class="nav-link">
+                    <i class="fas fa-paper-plane"></i> <span>Messages</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-navbar">
+            <div class="user-actions">
+                <div class="user-profile-tag">
+                    <i class="fas fa-user"></i>
+                    <span>{{ session['user_name'] if session['user_name'] else 'Candidate' }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="nav-logout-inline">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="page-header">
+                <h1>Available Opportunities</h1>
+                <p>Explore open roles and track your application progress.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message" style="background: #fff; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid #22c55e; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <i class="fas fa-info-circle" style="color:#22c55e; margin-right: 10px;"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if jobs %}
+                {% for job in jobs %}
+                    <div class="job-card">
+                        {% if job.status %}
+                            <span class="status-badge badge-{{ job.status|lower|replace(' ', '-') }}">
+                                {{ job.status }}
+                            </span>
+                        {% endif %}
+
+                        <h3>{{ job.title }}</h3>
+                        
+                        <div class="job-meta">
+                            <span><i class="far fa-calendar-check"></i> Posted: <strong>{{ job.posted_date }}</strong></span>
+                            <span><i class="far fa-clock"></i> Deadline: <strong>{{ job.deadline }}</strong></span>
+                        </div>
+
+                        <p class="job-desc">{{ job.description }}</p>
+
+                        {% if not job.status %}
+                            <a href="{{ url_for('candidate_apply', job_id=job.id) }}" class="btn-apply">
+                                Apply for this Role <i class="fas fa-arrow-right"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if job.status == 'Selected for Test' %}
+                            <div class="test-invite-box">
+                                <h4><i class="fas fa-bolt"></i> Assessment Invited</h4>
+                                <p>Congratulations! You have been shortlisted to the next stage. Please complete the assessment below.</p>
+                                <a href="{{ url_for('candidate_auth_start', job_id=job.id) }}" class="btn-test">
+                                    Launch Assessment Center
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        {% if job.status == 'Test Completed' %}
+                            <div style="margin-top: 20px; color: #166534; font-weight: 600; font-size: 0.9rem;">
+                                <i class="fas fa-check-double"></i> Your assessment is currently being processed by Candid AI.
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align:center; padding:80px 20px; background:#fff; border-radius:20px; border:1px solid #e2e8f0;">
+                    <div style="font-size: 3.5rem; margin-bottom: 20px; opacity: 0.2;">💼</div>
+                    <h3 style="color: var(--indigo-dark);">No vacancies at the moment</h3>
+                    <p style="color: var(--text-muted);">Please check back later or update your profile notifications.</p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+Flask
+Werkzeug
+Flask-Mail
+
+numpy
+opencv-python
+Pillow
+
+pdfplumber
+python-docx
+
+keras-facenet
+
+groq
+google-generativeai
